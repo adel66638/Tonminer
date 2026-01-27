@@ -1,31 +1,16 @@
 const express = require('express');
+const path = require('path');
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-let users = {}; 
+// إخبار السيرفر بمكان ملفات التصميم
+app.use(express.static(path.join(__dirname)));
 
+// تشغيل ملف index.html عند فتح الرابط
 app.get('/', (req, res) => {
-    res.send('<h1>سيرفر تعدين TON نشط</h1><p>بانتظار ربط الواجهة الأمامية...</p>');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.get('/api/mine', (req, res) => {
-    const wallet = req.query.wallet;
-    const userIP = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-
-    if (!wallet) return res.status(400).json({ error: "عنوان المحفظة مطلوب" });
-
-    // فحص منع الحسابات المتعددة
-    const isDuplicate = Object.values(users).find(u => u.ip === userIP && u.wallet !== wallet);
-    if (isDuplicate) return res.status(403).json({ error: "لا يمكن فتح حسابين من نفس الجهاز" });
-
-    if (!users[wallet]) {
-        users[wallet] = { wallet, ip: userIP, start: Date.now() };
-    }
-
-    const hours = (Date.now() - users[wallet].start) / (1000 * 60 * 60);
-    const balance = (hours * (0.1 / 24)).toFixed(6);
-
-    res.json({ balance: balance, status: "Mining in progress..." });
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
-
-app.listen(port, () => console.log('Server is running'));
