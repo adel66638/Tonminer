@@ -38,7 +38,7 @@
         /* Navigation Bar */
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #161b22; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #30363d; z-index: 1000; }
         .nav-item { color: #8b949e; text-decoration: none; font-size: 11px; cursor: pointer; text-align: center; }
-        .nav-item.active-tab { color: var(--ton-blue); }
+        .nav-item.active-tab { color: var(--ton-blue); font-weight: bold; }
 
         /* Payout Notification */
         .notification { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: #1c2128; border-left: 4px solid var(--green); padding: 10px 20px; border-radius: 10px; display: none; z-index: 2000; width: 80%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-size: 12px; }
@@ -125,7 +125,7 @@
 
     <script>
         // --- SETTINGS ---
-        const MY_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; // ضع عنوان محفظتك هنا
+        const MY_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
 
         // 1. Balance Counter
         let bal = 0;
@@ -145,10 +145,11 @@
 
         // 3. Navigation
         function openTab(evt, tabName) {
-            let content = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < content.length; i++) content[i].style.display = "none";
-            let tabs = document.getElementsByClassName("nav-item");
-            for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove("active-tab");
+            let i, content, tabs;
+            content = document.getElementsByClassName("tab-content");
+            for (i = 0; i < content.length; i++) content[i].style.display = "none";
+            tabs = document.getElementsByClassName("nav-item");
+            for (i = 0; i < tabs.length; i++) tabs[i].classList.remove("active-tab");
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.classList.add("active-tab");
         }
