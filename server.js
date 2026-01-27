@@ -3,10 +3,10 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// إخبار السيرفر بمكان ملفات التصميم
-app.use(express.static(path.join(__dirname)));
+// تشغيل الملفات الثابتة (CSS, Images)
+app.use(express.static(__dirname));
 
-// تشغيل ملف index.html عند فتح الرابط
+// الوظيفة الرئيسية: إرسال ملف index.html للمتصفح
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
