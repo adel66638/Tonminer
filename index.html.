@@ -1,179 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TON Cloud Mining Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TonMiner V2 - نظام التعدين المطور</title>
     <style>
-        :root { --ton-blue: #0088cc; --bg: #0a0d12; --card: #1c2128; --green: #3fb950; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 80px; overflow-x: hidden; }
-        
-        /* Flashing Animation for TON Logo */
-        @keyframes flash-glow {
-            0% { filter: drop-shadow(0 0 2px var(--ton-blue)); transform: scale(1); }
-            50% { filter: drop-shadow(0 0 15px var(--ton-blue)); transform: scale(1.1); }
-            100% { filter: drop-shadow(0 0 2px var(--ton-blue)); transform: scale(1); }
-        }
-
-        .header-promo { background: #ff3e3e; padding: 10px; text-align: center; font-weight: bold; font-size: 13px; position: sticky; top: 0; z-index: 100; }
-        .main-logo { width: 65px; margin: 20px auto; display: block; animation: flash-glow 1.5s infinite; }
-
-        /* Tabs System */
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.4s; }
-        .active-section { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #30363d; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        #balance { font-size: 38px; color: var(--green); font-family: 'Courier New', monospace; margin: 5px 0; font-weight: bold; }
-        
-        .btn-action { background: var(--ton-blue); border: none; color: white; padding: 16px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-action:active { transform: scale(0.98); }
-
-        /* Plans Grid */
-        .plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        .plan-item { background: #21262d; border: 1px solid #30363d; padding: 15px; border-radius: 15px; position: relative; text-align: center; }
-        .plan-price { display: block; color: var(--ton-blue); font-size: 18px; font-weight: bold; margin: 5px 0; }
-        .buy-small { background: var(--green); border: none; color: white; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-
-        /* Navigation Bar */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #161b22; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #30363d; z-index: 1000; }
-        .nav-item { color: #8b949e; text-decoration: none; font-size: 11px; cursor: pointer; text-align: center; }
-        .nav-item.active-tab { color: var(--ton-blue); font-weight: bold; }
-
-        /* Payout Notification */
-        .notification { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: #1c2128; border-left: 4px solid var(--green); padding: 10px 20px; border-radius: 10px; display: none; z-index: 2000; width: 80%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-size: 12px; }
+        :root { --main-blue: #0088cc; --dark-bg: #0e1217; --card-bg: #1c2128; }
+        body { background: var(--dark-bg); color: white; font-family: sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
+        .card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid #30363d; text-align: center; }
+        .balance-num { font-size: 35px; color: #3fb950; font-weight: bold; margin: 10px 0; }
+        .plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .plan-card { background: #161b22; border: 1px solid var(--main-blue); padding: 10px; border-radius: 10px; font-size: 13px; }
+        .btn-buy { background: #238636; color: white; border: none; padding: 8px; width: 100%; border-radius: 5px; margin-top: 5px; cursor: pointer; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #161b22; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #30363d; }
     </style>
 </head>
 <body>
 
-    <div class="header-promo">PROMO ENDS IN: <span id="timer">01:59:59</span></div>
-    
-    <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" class="main-logo" alt="TON">
+    <div class="card">
+        <div id="current-plan-badge" style="background: var(--main-blue); display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px;">خطة: جاري التحميل...</div>
+        <div class="balance-num" id="balance">0.00000000</div>
+        <button onclick="location.reload()" style="background:none; border:1px solid gray; color:gray; border-radius:5px; padding:5px 15px;">تحديث العداد ↻</button>
+    </div>
 
-    <div id="mining" class="tab-content active-section">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-            <div class="card" style="padding: 10px; text-align: center; margin: 0;">
-                <small style="color: #8b949e;">Hashrate</small><br><b>12.4 MH/s</b>
-            </div>
-            <div class="card" style="padding: 10px; text-align: center; margin: 0;">
-                <small style="color: #8b949e;">Status</small><br><b style="color: var(--green);">● Active</b>
-            </div>
-        </div>
-
-        <div class="card" style="text-align: center; border-color: var(--green);">
-            <small style="color: #8b949e;">Your TON Balance</small>
-            <div id="balance">0.00000000</div>
-            <div style="font-size: 12px; color: #8b949e; margin-bottom: 15px;">≈ $<span id="usd-val">0.00</span> USD</div>
-            <button class="btn-action" onclick="withdrawAction()">WITHDRAW NOW</button>
-        </div>
-
-        <h3 style="font-size: 18px; margin: 20px 0 10px;">Upgrade Levels 🚀</h3>
-        <div class="plans-grid">
-            <div class="plan-item" style="border-color: #cd7f32;">
-                <small>BRONZE</small>
-                <span class="plan-price">2 TON</span>
-                <button class="buy-small" onclick="processPayment(2, 'Bronze v1')">ACTIVATE</button>
-            </div>
-            <div class="plan-item" style="border-color: #c0c0c0;">
-                <small>SILVER</small>
-                <span class="plan-price">10 TON</span>
-                <button class="buy-small" onclick="processPayment(10, 'Silver v2')">ACTIVATE</button>
-            </div>
-            <div class="plan-item" style="border-color: #ffd700;">
-                <small>GOLD</small>
-                <span class="plan-price">50 TON</span>
-                <button class="buy-small" onclick="processPayment(50, 'Gold v5')">ACTIVATE</button>
-            </div>
-            <div class="plan-item" style="border-color: #a333ff;">
-                <small>ELITE VIP</small>
-                <span class="plan-price">100 TON</span>
-                <button class="buy-small" style="background:#a333ff" onclick="processPayment(100, 'Elite VIP')">ACTIVATE</button>
-            </div>
+    <div class="card">
+        <h3>👥 My Team (فريقي)</h3>
+        <p>إحالاتك الحقيقية: <span id="ref-count" style="color:var(--main-blue); font-weight:bold;">0</span></p>
+        <div style="background:#000; padding:10px; border-radius:5px; font-size:10px; word-break: break-all;">
+            رابط الإحالة: <br> <span id="ref-link" style="color:#58a6ff;">جاري التوليد...</span>
         </div>
     </div>
 
-    <div id="history" class="tab-content">
-        <h3>Transaction History</h3>
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:10px 0;">
-                <span>Daily Profit</span> <span style="color:var(--green)">+0.005 TON</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:10px 0;">
-                <span>System Bonus</span> <span style="color:var(--green)">+0.100 TON</span>
-            </div>
+    <h3>⚡ شراء الباقات (Mining Plans)</h3>
+    <div class="plans-grid" id="plans-container">
         </div>
+
+    <div class="nav-bar">
+        <span>🏠 الرئيسية</span>
+        <span>📊 الإحصائيات</span>
+        <span>⚙️ الإدارة</span>
     </div>
 
-    <div id="support" class="tab-content">
-        <h3>24/7 Support 💬</h3>
-        <div class="card" style="text-align: left;">
-            <p>Need help with your withdrawal or upgrade?</p>
-            <button class="btn-action" style="background:#24a1de" onclick="window.open('https://t.me/YourUsername')">Contact Telegram Support</button>
-        </div>
-    </div>
+<script>
+    const userWallet = localStorage.getItem('wallet') || "UQ_TEST_ADDRESS";
 
-    <nav class="nav-bar">
-        <div class="nav-item active-tab" onclick="openTab(event, 'mining')">Mining</div>
-        <div class="nav-item" onclick="openTab(event, 'history')">History</div>
-        <div class="nav-item" onclick="openTab(event, 'support')">Support</div>
-    </nav>
+    // تعريف الخطط الـ 10 بناءً على طلبك
+    const miningPlans = [
+        { id: 0, name: "المجانية", price: 0, speed: 0.00000021 },
+        { id: 1, name: "خطة 2 TON", price: 2, speed: 0.00000085 },
+        { id: 2, name: "خطة 4 TON", price: 4, speed: 0.00000180 },
+        { id: 3, name: "خطة 6 TON", price: 6, speed: 0.00000290 },
+        { id: 4, name: "خطة 8 TON", price: 8, speed: 0.00000420 },
+        { id: 5, name: "خطة 10 TON", price: 10, speed: 0.00000580 },
+        { id: 6, name: "خطة 12 TON", price: 12, speed: 0.00000750 },
+        { id: 7, name: "خطة 14 TON", price: 14, speed: 0.00000950 },
+        { id: 8, name: "خطة 16 TON", price: 16, speed: 0.00001200 },
+        { id: 9, name: "خطة 18 TON", price: 18, speed: 0.00001500 },
+        { id: 10, name: "خطة 20 TON", price: 20, speed: 0.00002000 }
+    ];
 
-    <div id="payout-notify" class="notification">
-        <span style="color: var(--green);">Successful Withdrawal!</span><br>
-        <small id="notif-addr">Address: EQD...8x2</small> | <small id="notif-amt">14 TON</small>
-    </div>
+    let currentPlan = miningPlans[0];
+    let startTime = 0;
+    let baseBalance = 0;
 
-    <script>
-        // --- SETTINGS ---
-        const MY_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
+    async function init() {
+        // جلب البيانات من السيرفر
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ wallet: userWallet })
+        });
+        const data = await res.json();
 
-        // 1. Balance Counter
-        let bal = 0;
+        currentPlan = miningPlans[data.planId || 0];
+        startTime = data.lastMiningStart;
+        baseBalance = data.balance || 0;
+
+        document.getElementById('ref-count').innerText = data.referrals;
+        document.getElementById('current-plan-badge').innerText = "خطتك الحالية: " + currentPlan.name;
+        document.getElementById('ref-link').innerText = window.location.origin + "/?ref=" + userWallet;
+
+        renderPlans();
+        startCounter();
+    }
+
+    function renderPlans() {
+        const container = document.getElementById('plans-container');
+        miningPlans.slice(1).forEach(plan => {
+            container.innerHTML += `
+                <div class="plan-card">
+                    <b>${plan.name}</b><br>
+                    <span>الربح: ${ (plan.speed * 86400).toFixed(2) } TON/يوم</span>
+                    <button class="btn-buy" onclick="buyRequest(${plan.id}, ${plan.price})">شراء بـ ${plan.price}T</button>
+                </div>
+            `;
+        });
+    }
+
+    function startCounter() {
         setInterval(() => {
-            bal += 0.00000045;
-            document.getElementById('balance').innerText = bal.toFixed(8);
-            document.getElementById('usd-val').innerText = (bal * 5.45).toFixed(2);
-        }, 100);
-
-        // 2. Timer Logic
-        let sec = 7200;
-        setInterval(() => {
-            let h = Math.floor(sec / 3600); let m = Math.floor((sec % 3600) / 60); let s = sec % 60;
-            document.getElementById('timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-            if(sec > 0) sec--;
+            const now = Date.now();
+            const secondsPassed = (now - startTime) / 1000;
+            const liveBalance = baseBalance + (secondsPassed * currentPlan.speed);
+            document.getElementById('balance').innerText = liveBalance.toFixed(8);
         }, 1000);
+    }
 
-        // 3. Navigation
-        function openTab(evt, tabName) {
-            let i, content, tabs;
-            content = document.getElementsByClassName("tab-content");
-            for (i = 0; i < content.length; i++) content[i].style.display = "none";
-            tabs = document.getElementsByClassName("nav-item");
-            for (i = 0; i < tabs.length; i++) tabs[i].classList.remove("active-tab");
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.classList.add("active-tab");
-        }
+    function buyRequest(id, price) {
+        alert("يرجى إرسال " + price + " TON إلى عنوان المحفظة الرسمي. سيتم تفعيل الخطة " + id + " فور التأكد من الدفع.");
+    }
 
-        // 4. Payment Function
-        function processPayment(amt, name) {
-            const link = `ton://transfer/${MY_WALLET}?amount=${amt * 1000000000}&text=Upgrade+to+${name}`;
-            if(confirm(`Upgrade to ${name} for ${amt} TON?`)) window.location.href = link;
-        }
-
-        // 5. Withdraw Function
-        function withdrawAction() {
-            alert("Minimum withdrawal is 5 TON. You need more hashpower!");
-        }
-
-        // 6. Fake Notifications
-        setInterval(() => {
-            const addrs = ["EQD...z92", "UQC...4b1", "EQA...7r4", "UQD...1m9"];
-            document.getElementById('notif-addr').innerText = "Address: " + addrs[Math.floor(Math.random()*addrs.length)];
-            document.getElementById('notif-amt').innerText = (Math.random()*20 + 5).toFixed(1) + " TON";
-            let n = document.getElementById('payout-notify');
-            n.style.display = "block";
-            setTimeout(() => { n.style.display = "none"; }, 4000);
-        }, 45000);
-    </script>
+    init();
+</script>
 </body>
 </html>
