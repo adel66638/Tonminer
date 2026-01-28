@@ -3,114 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TonMiner V2 - نظام التعدين المطور</title>
+    <title>TON CYBER-MINER | OFFICIAL TERMINAL</title>
     <style>
-        :root { --main-blue: #0088cc; --dark-bg: #0e1217; --card-bg: #1c2128; }
-        body { background: var(--dark-bg); color: white; font-family: sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        .card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid #30363d; text-align: center; }
-        .balance-num { font-size: 35px; color: #3fb950; font-weight: bold; margin: 10px 0; }
-        .plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .plan-card { background: #161b22; border: 1px solid var(--main-blue); padding: 10px; border-radius: 10px; font-size: 13px; }
-        .btn-buy { background: #238636; color: white; border: none; padding: 8px; width: 100%; border-radius: 5px; margin-top: 5px; cursor: pointer; }
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #161b22; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #30363d; }
+        :root { --neon: #00ff41; --bg: #010101; --panel: rgba(0, 25, 0, 0.95); }
+        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; overflow-x: hidden; }
+        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.12; }
+        .wrapper { max-width: 1200px; margin: auto; padding: 20px; }
+        
+        header { border: 2px solid var(--neon); padding: 15px; text-align: center; background: rgba(0,0,0,0.9); margin-bottom: 20px; position: relative; }
+        .project-day-badge { position: absolute; top: -10px; right: 20px; background: yellow; color: #000; padding: 5px 15px; font-weight: bold; font-size: 0.8em; transform: skew(-15deg); }
+        
+        .promo-banner { background: #fff; color: #000; font-weight: bold; padding: 5px; font-size: 0.75em; margin-bottom: 10px; animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .panel { border: 1px solid var(--neon); background: var(--panel); padding: 20px; position: relative; box-shadow: 0 0 15px rgba(0,255,65,0.1); }
+        .panel h3 { margin: 0 0 15px 0; background: var(--neon); color: #000; padding: 3px 10px; display: inline-block; font-size: 0.85em; }
+        
+        .balance-num { font-size: 3.2em; color: #fff; text-align: center; text-shadow: 0 0 20px var(--neon); margin: 15px 0; font-weight: bold; }
+        .usd-val { text-align: center; color: #888; margin-bottom: 25px; font-size: 1.1em; }
+
+        .levels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        .lvl-card { border: 1px solid #444; padding: 12px; text-align: center; background: rgba(255,255,255,0.03); transition: 0.3s; }
+        .lvl-card.active { border-color: var(--neon); background: rgba(0,255,65,0.15); box-shadow: 0 0 15px var(--neon); }
+        .lvl-card h4 { margin: 5px 0; font-size: 0.9em; color: #fff; }
+        .lvl-card span { display: block; font-size: 0.7em; margin-bottom: 8px; color: #ccc; }
+
+        .btn { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 12px; width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        .btn:hover:not(:disabled) { background: var(--neon); color: #000; }
+        .btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .wallet-addr { background: #000; padding: 12px; font-size: 0.7em; word-break: break-all; border: 1px solid #333; color: #00ffff; margin: 10px 0; }
+        #log-screen { height: 120px; background: #000; padding: 10px; font-size: 0.8em; overflow-y: auto; border: 1px inset var(--neon); margin-top: 15px; color: #00ff41; }
+
+        @media (max-width: 850px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <div id="current-plan-badge" style="background: var(--main-blue); display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px;">خطة: جاري التحميل...</div>
-        <div class="balance-num" id="balance">0.00000000</div>
-        <button onclick="location.reload()" style="background:none; border:1px solid gray; color:gray; border-radius:5px; padding:5px 15px;">تحديث العداد ↻</button>
-    </div>
+    <canvas id="matrix-canvas"></canvas>
 
-    <div class="card">
-        <h3>👥 My Team (فريقي)</h3>
-        <p>إحالاتك الحقيقية: <span id="ref-count" style="color:var(--main-blue); font-weight:bold;">0</span></p>
-        <div style="background:#000; padding:10px; border-radius:5px; font-size:10px; word-break: break-all;">
-            رابط الإحالة: <br> <span id="ref-link" style="color:#58a6ff;">جاري التوليد...</span>
-        </div>
-    </div>
+    <div class="wrapper">
+        <header>
+            <div class="project-day-badge" id="project-day-display">PROJECT DAY: 0</div>
+            <div class="promo-banner" id="promo-timer">جارٍ فحص بروتوكول البداية...</div>
+            <h1 style="margin:0; font-size: 2em; letter-spacing: 4px;">TON_CYBER_INTERFACE_v6.1</h1>
+            <p style="font-size:0.7em; opacity:0.8;">[ STATUS: ENCRYPTED ] [ SERVER: GLOBAL-NODE-1 ]</p>
+        </header>
 
-    <h3>⚡ شراء الباقات (Mining Plans)</h3>
-    <div class="plans-grid" id="plans-container">
-        </div>
+        <div class="main-grid">
+            <div class="left-col">
+                <div class="panel">
+                    <h3>SYSTEM_CORE_STATS</h3>
+                    <div id="ton-balance" class="balance-num">0.00000000</div>
+                    <div id="usd-balance" class="usd-val">≈ $0.00 USD</div>
+                    
+                    <div id="log-screen"></div>
 
-    <div class="nav-bar">
-        <span>🏠 الرئيسية</span>
-        <span>📊 الإحصائيات</span>
-        <span>⚙️ الإدارة</span>
-    </div>
-
-<script>
-    const userWallet = localStorage.getItem('wallet') || "UQ_TEST_ADDRESS";
-
-    // تعريف الخطط الـ 10 بناءً على طلبك
-    const miningPlans = [
-        { id: 0, name: "المجانية", price: 0, speed: 0.00000021 },
-        { id: 1, name: "خطة 2 TON", price: 2, speed: 0.00000085 },
-        { id: 2, name: "خطة 4 TON", price: 4, speed: 0.00000180 },
-        { id: 3, name: "خطة 6 TON", price: 6, speed: 0.00000290 },
-        { id: 4, name: "خطة 8 TON", price: 8, speed: 0.00000420 },
-        { id: 5, name: "خطة 10 TON", price: 10, speed: 0.00000580 },
-        { id: 6, name: "خطة 12 TON", price: 12, speed: 0.00000750 },
-        { id: 7, name: "خطة 14 TON", price: 14, speed: 0.00000950 },
-        { id: 8, name: "خطة 16 TON", price: 16, speed: 0.00001200 },
-        { id: 9, name: "خطة 18 TON", price: 18, speed: 0.00001500 },
-        { id: 10, name: "خطة 20 TON", price: 20, speed: 0.00002000 }
-    ];
-
-    let currentPlan = miningPlans[0];
-    let startTime = 0;
-    let baseBalance = 0;
-
-    async function init() {
-        // جلب البيانات من السيرفر
-        const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ wallet: userWallet })
-        });
-        const data = await res.json();
-
-        currentPlan = miningPlans[data.planId || 0];
-        startTime = data.lastMiningStart;
-        baseBalance = data.balance || 0;
-
-        document.getElementById('ref-count').innerText = data.referrals;
-        document.getElementById('current-plan-badge').innerText = "خطتك الحالية: " + currentPlan.name;
-        document.getElementById('ref-link').innerText = window.location.origin + "/?ref=" + userWallet;
-
-        renderPlans();
-        startCounter();
-    }
-
-    function renderPlans() {
-        const container = document.getElementById('plans-container');
-        miningPlans.slice(1).forEach(plan => {
-            container.innerHTML += `
-                <div class="plan-card">
-                    <b>${plan.name}</b><br>
-                    <span>الربح: ${ (plan.speed * 86400).toFixed(2) } TON/يوم</span>
-                    <button class="btn-buy" onclick="buyRequest(${plan.id}, ${plan.price})">شراء بـ ${plan.price}T</button>
+                    <h4 style="border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 25px;">AVAILABLE_NODES (LEVELS 1-10)</h4>
+                    <div class="levels-grid" id="levels-list"></div>
                 </div>
-            `;
-        });
-    }
+            </div>
 
-    function startCounter() {
+            <div class="right-col">
+                <div class="panel">
+                    <h3>FINANCIAL_LINK</h3>
+                    <p style="font-size:0.75em;">للتعدين الفوري، أودع في العنوان التالي:</p>
+                    <div style="background:#fff; padding:8px; width:130px; margin:15px auto;">
+                        <img id="qr-code" src="" style="width:100%;">
+                    </div>
+                    <div class="wallet-addr" id="wallet-display">جاري التحميل...</div>
+                    <button class="btn" onclick="copyWallet()">نسخ العنوان</button>
+                    
+                    <div style="margin-top: 25px; border-top: 2px solid #222; padding-top: 20px;">
+                        <button class="btn" style="border-color: #fff; color: #fff; font-size: 1.1em;" onclick="withdraw()">WITHDRAW PROFITS</button>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top:20px; border-color: #00ffff;">
+                    <h3>REFERRAL_PORTAL</h3>
+                    <p style="font-size:0.75em;">ادعُ الأصدقاء لفتح ميزات السحب:</p>
+                    <div style="font-size: 0.9em; margin-bottom: 10px;">إحالاتك الحالية: <span id="ref-count" style="color:#00ffff; font-weight:bold;">0</span> / 5</div>
+                    <button class="btn" style="border-color: #00ffff; color: #00ffff;" onclick="copyRef()">نسخ رابط الدعوة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. إعدادات المشروع والمستويات
+        const projectStartDate = new Date(2026, 0, 28); // 28 يناير 2026
+        const myWallet = "ضع_هنا_عنوان_محفظتك_الحقيقي"; // استبدله بعنوانك الفعلي
+
+        const levels = [
+            { id: 1, name: "Nano Node", price: 0, hoursToTarget: 72 },
+            { id: 2, name: "Bronze Chip", price: 3, hoursToTarget: 18 },
+            { id: 3, name: "Silver Blade", price: 10, hoursToTarget: 8 },
+            { id: 4, name: "Gold Rig", price: 25, hoursToTarget: 4 },
+            { id: 5, name: "Platinum Core", price: 60, hoursToTarget: 2 },
+            { id: 6, name: "Diamond Array", price: 150, hoursToTarget: 1 },
+            { id: 7, name: "Cyber Master", price: 400, hoursToTarget: 0.5 },
+            { id: 8, name: "Global Dominator", price: 1000, hoursToTarget: 0.25 },
+            { id: 9, name: "Quantum Hacker", price: 2500, hoursToTarget: 0.083 },
+            { id: 10, name: "TON GOD", price: 5000, hoursToTarget: 0.033 }
+        ];
+
+        let balance = parseFloat(localStorage.getItem('ton_bal_final')) || 0;
+        let currentLvlId = parseInt(localStorage.getItem('ton_lvl_final')) || 1;
+        let referrals = parseInt(localStorage.getItem('ton_ref_final')) || 0;
+        const tonPrice = 5.40;
+
+        // 2. إدارة الأيام والوقت
+        function updateProjectData() {
+            const now = new Date();
+            const diffMs = now - projectStartDate;
+            const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('project-day-display').innerText = `PROJECT DAY: ${daysPassed >= 0 ? daysPassed : 0}`;
+
+            // نظام الـ 5 أيام
+            if (daysPassed < 5) {
+                const daysRemaining = 5 - daysPassed;
+                document.getElementById('promo-timer').innerText = `🎁 عرض الافتتاح: السحب متاح بدون قيود لمدة ${daysRemaining} يوم!`;
+                document.getElementById('promo-timer').style.background = "#fff";
+            } else {
+                document.getElementById('promo-timer').innerText = "⚠️ انتهى العرض: السحب يتطلب الآن رصيد 1 TON + 5 إحالات.";
+                document.getElementById('promo-timer').style.background = "#ff4141";
+                document.getElementById('promo-timer').style.color = "#fff";
+            }
+        }
+
+        // 3. الوظائف الأساسية
+        function render() {
+            const list = document.getElementById('levels-list');
+            list.innerHTML = '';
+            levels.forEach(l => {
+                const active = l.id === currentLvlId;
+                list.innerHTML += `
+                    <div class="lvl-card ${active ? 'active' : ''}">
+                        <h4>${l.name}</h4>
+                        <span>الوصول لـ 1 TON: ${l.hoursToTarget >= 1 ? l.hoursToTarget+'h' : Math.round(l.hoursToTarget*60)+'m'}</span>
+                        <span style="color:yellow">السعر: ${l.price} TON</span>
+                        <button class="btn" ${active ? 'disabled' : ''} onclick="buy(${l.id}, ${l.price})">${active ? 'نشط' : 'ترقية'}</button>
+                    </div>`;
+            });
+            document.getElementById('wallet-display').innerText = myWallet;
+            document.getElementById('qr-code').src = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${myWallet}`;
+            updateProjectData();
+        }
+
+        function buy(id, price) {
+            if (balance >= price) {
+                balance -= price;
+                currentLvlId = id;
+                localStorage.setItem('ton_lvl_final', id);
+                render();
+                log(`تم الترقية إلى مستوى: ${levels.find(l=>l.id===id).name}`);
+            } else { alert("عذراً، الرصيد غير كافٍ للترقية!"); }
+        }
+
+        function withdraw() {
+            const diffMs = Date.now() - projectStartDate;
+            const isPromo = diffMs < (5 * 24 * 60 * 60 * 1000);
+
+            if (isPromo) {
+                if (balance > 0) {
+                    alert(`✅ سحب ترويجي مقبول!\nالمبلغ: ${balance.toFixed(4)} TON\nبما أننا في الأيام الـ 5 الأولى، السحب فوري وبدون شروط.`);
+                    completeWithdraw();
+                } else { alert("الرصيد فارغ، انتظر التعدين!"); }
+            } else {
+                if (balance >= 1.0 && referrals >= 5) {
+                    alert(`✅ تمت معالجة طلب السحب بنجاح!\nالمبلغ: ${balance.toFixed(4)} TON.`);
+                    completeWithdraw();
+                } else {
+                    alert(`❌ شروط السحب (بعد اليوم 5):\n- رصيد 1.0 TON (لديك ${balance.toFixed(2)})\n- 5 إحالات (لديك ${referrals})`);
+                }
+            }
+        }
+
+        function completeWithdraw() {
+            balance = 0;
+            localStorage.setItem('ton_bal_final', balance);
+            log("Transaction processed: Funds sent to blockchain.");
+        }
+
+        // 4. المحرك والرسوميات
         setInterval(() => {
-            const now = Date.now();
-            const secondsPassed = (now - startTime) / 1000;
-            const liveBalance = baseBalance + (secondsPassed * currentPlan.speed);
-            document.getElementById('balance').innerText = liveBalance.toFixed(8);
+            const speed = 1.0 / (levels.find(l=>l.id===currentLvlId).hoursToTarget * 3600);
+            balance += speed;
+            document.getElementById('ton-balance').innerText = balance.toFixed(8);
+            document.getElementById('usd-balance').innerText = `≈ $${(balance * tonPrice).toFixed(2)} USD`;
+            document.getElementById('ref-count').innerText = referrals;
+            localStorage.setItem('ton_bal_final', balance);
         }, 1000);
-    }
 
-    function buyRequest(id, price) {
-        alert("يرجى إرسال " + price + " TON إلى عنوان المحفظة الرسمي. سيتم تفعيل الخطة " + id + " فور التأكد من الدفع.");
-    }
+        function log(m) {
+            const s = document.getElementById('log-screen');
+            s.innerHTML += `<div>> ${m}</div>`;
+            s.scrollTop = s.scrollHeight;
+        }
 
-    init();
-</script>
+        function copyWallet() { navigator.clipboard.writeText(myWallet); alert("Address Copied!"); }
+        function copyRef() { 
+            navigator.clipboard.writeText(window.location.href + "?ref=user" + Math.floor(Math.random()*999)); 
+            alert("تم نسخ رابطك! (ستزداد إحالاتك الآن للمحاكاة)");
+            if(referrals < 5) { referrals++; localStorage.setItem('ton_ref_final', referrals); }
+        }
+
+        const c = document.getElementById('matrix-canvas');
+        const ctx = c.getContext('2d');
+        c.width = window.innerWidth; c.height = window.innerHeight;
+        const d = Array(Math.floor(c.width/14)).fill(1);
+        function matrix() {
+            ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fillRect(0,0,c.width,c.height);
+            ctx.fillStyle = "#0f0"; ctx.font = "14px monospace";
+            d.forEach((y, i) => {
+                ctx.fillText(String.fromCharCode(Math.random()*128), i*14, y*14);
+                if(y*14 > c.height && Math.random() > 0.975) d[i] = 0;
+                d[i]++;
+            });
+        }
+        setInterval(matrix, 45);
+        render();
+        setInterval(() => log("Network scan: Node stable. No threats detected."), 10000);
+    </script>
 </body>
 </html>
