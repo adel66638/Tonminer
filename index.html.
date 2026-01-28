@@ -93,7 +93,7 @@
     <script>
         // 1. إعدادات المشروع والمستويات
         const projectStartDate = new Date(2026, 0, 28); // 28 يناير 2026
-        const myWallet = "UQBdgfwe8zbfSzhIy__hM8tR1VcJG-styXU30yq4kQVN0F-i
+        const myWallet = "UQBdgfwe8zbfSzhIy__hM8tR1VcJG-styXU30yq4kQVN0F-i"
         const levels = [
             { id: 1, name: "Nano Node", price: 0, hoursToTarget: 72 },
             { id: 2, name: "Bronze Chip", price: 3, hoursToTarget: 18 },
