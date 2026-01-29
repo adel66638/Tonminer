@@ -3,262 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON CYBER-MINER | Dashboard</title>
+    <title>TON CYBER-MINER PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Cairo:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Rajdhani:wght@500;700&display=swap');
         
         body {
-            background-color: #0b0e14;
+            background: #05070a; /* لون خلفية داكن جداً واحترافي */
             color: #e2e8f0;
             font-family: 'Cairo', sans-serif;
+            margin-bottom: 80px; /* مساحة للقائمة السفلية */
         }
-        .cyber-font { font-family: 'Orbitron', sans-serif; }
-        .glass-card {
-            background: rgba(17, 24, 39, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .cyber-card {
+            background: linear-gradient(145deg, #0f172a, #020617);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .mining-anim {
-            animation: pulse 2s infinite;
+        .ton-gradient {
+            background: linear-gradient(90deg, #0088cc, #00c6ff);
         }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .mining-glow {
+            box-shadow: 0 0 15px rgba(0, 136, 204, 0.4);
         }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #0b0e14; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        /* أنيميشن التعدين */
+        @keyframes gear-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .gear-icon { animation: gear-rotate 4s linear infinite; }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="bg-[#05070a]">
 
-    <aside class="fixed right-0 top-0 h-full w-64 glass-card border-l hidden lg:flex flex-col z-50">
-        <div class="p-6">
-            <h1 class="text-blue-500 font-bold text-2xl cyber-font tracking-tighter">TON_MINER</h1>
+    <header class="p-4 flex justify-between items-center bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-50 border-b border-white/5">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 ton-gradient rounded-full flex items-center justify-center">
+                <i class="fa-brands fa-ethereum text-white"></i>
+            </div>
+            <span class="font-bold tracking-wider text-lg" style="font-family: 'Rajdhani';">TON_CYBER <span class="text-blue-500">V2</span></span>
         </div>
-        <nav class="flex-1 px-4 space-y-2">
-            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg bg-blue-600 text-white">
-                <i class="fas fa-home"></i> <span>الرئيسية</span>
-            </a>
-            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg hover:bg-gray-800 transition">
-                <i class="fas fa-microchip"></i> <span>وحدات التعدين</span>
-            </a>
-            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg hover:bg-gray-800 transition">
-                <i class="fas fa-wallet"></i> <span>السحب</span>
-            </a>
-            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg hover:bg-gray-800 transition">
-                <i class="fas fa-users"></i> <span>الإحالات</span>
-            </a>
-        </nav>
-        <div class="p-4 border-t border-gray-700">
-            <div id="project-day-display" class="text-xs text-blue-400 font-bold">PROJECT DAY: 0</div>
+        <div class="flex items-center gap-3">
+            <div class="bg-green-500/10 text-green-500 text-[10px] px-2 py-1 rounded border border-green-500/20">
+                <i class="fas fa-circle text-[6px] align-middle"></i> LIVE
+            </div>
         </div>
-    </aside>
+    </header>
 
-    <main class="lg:mr-64 p-4 lg:p-8">
+    <div class="max-w-md mx-auto p-4 space-y-6">
         
-        <div class="glass-card rounded-2xl p-4 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div id="promo-timer" class="text-sm font-bold bg-yellow-400 text-black px-4 py-1 rounded-full mining-anim">
-                جارٍ فحص بروتوكول البداية...
+        <section class="cyber-card rounded-3xl p-6 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl"></div>
+            <p class="text-gray-400 text-sm mb-1">إجمالي الرصيد القابل للسحب</p>
+            <div class="flex items-baseline gap-2">
+                <h1 id="ton-balance" class="text-4xl font-bold text-white tracking-tight">0.00000000</h1>
+                <span class="text-blue-500 font-bold">TON</span>
             </div>
-            <div class="flex items-center gap-4 text-sm">
-                <span class="text-gray-400 uppercase cyber-font">Server: Global-Node-1</span>
-                <span class="text-green-400 flex items-center gap-1">
-                    <span class="w-2 h-2 bg-green-400 rounded-full animate-ping"></span> Online
-                </span>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div class="glass-card rounded-2xl p-6 border-b-4 border-blue-500 shadow-xl">
-                <div class="flex justify-between items-start mb-4">
-                    <p class="text-gray-400 font-bold uppercase text-xs">رصيدك الحالي</p>
-                    <i class="fa-brands fa-ethereum text-blue-500 text-2xl"></i>
-                </div>
-                <h2 id="ton-balance" class="text-4xl font-bold cyber-font mb-2">0.00000000</h2>
-                <p id="usd-balance" class="text-gray-500 text-sm">≈ $0.00 USD</p>
-            </div>
-
-            <div class="glass-card rounded-2xl p-6 border-b-4 border-cyan-500">
-                <div class="flex justify-between items-start mb-4">
-                    <p class="text-gray-400 font-bold uppercase text-xs">الإحالات النشطة</p>
-                    <i class="fas fa-users text-cyan-500 text-2xl"></i>
-                </div>
-                <h2 id="ref-count" class="text-4xl font-bold cyber-font mb-2">0</h2>
-                <button onclick="copyRef()" class="text-xs text-cyan-400 hover:underline">نسخ رابط الإحالة الخاص بك</button>
-            </div>
-
-            <div class="glass-card rounded-2xl p-6 border-b-4 border-green-500">
-                <div class="flex justify-between items-start mb-4">
-                    <p class="text-gray-400 font-bold uppercase text-xs">حالة السحب</p>
-                    <i class="fas fa-bolt text-green-500 text-2xl"></i>
-                </div>
-                <button onclick="withdraw()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition mt-4">
-                    سحب الأرباح الآن
+            <p id="usd-balance" class="text-gray-500 text-sm mt-1">≈ $0.00 USD</p>
+            
+            <div class="grid grid-cols-2 gap-3 mt-6">
+                <button onclick="withdraw()" class="ton-gradient text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg mining-glow active:scale-95 transition">
+                    <i class="fas fa-arrow-down-wide-short"></i> سحب
+                </button>
+                <button onclick="document.getElementById('nodes').scrollIntoView({behavior:'smooth'})" class="bg-white/5 hover:bg-white/10 text-white py-3 rounded-2xl font-bold border border-white/10 transition">
+                    <i class="fas fa-rocket text-blue-400"></i> ترقية
                 </button>
             </div>
-        </div>
+        </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <i class="fas fa-microchip text-blue-500"></i> وحدات التعدين المتاحة
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="levels-list">
-                    </div>
-            </div>
-
-            <div class="space-y-6">
-                <div class="glass-card rounded-2xl p-6 border border-gray-700">
-                    <h3 class="text-lg font-bold mb-4">إيداع لتطوير المعدات</h3>
-                    <div class="bg-white p-2 rounded-xl w-32 mx-auto mb-4">
-                        <img id="qr-code" src="" class="w-full">
-                    </div>
-                    <div id="wallet-display" class="bg-black/50 p-3 rounded-lg text-[10px] break-all text-center text-blue-300 font-mono mb-4 border border-blue-900/50">
-                        جاري التحميل...
-                    </div>
-                    <button onclick="copyWallet()" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg text-sm transition font-bold">
-                        نسخ عنوان الإيداع
-                    </button>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="cyber-card p-4 rounded-2xl border-r-2 border-blue-500">
+                <p class="text-gray-500 text-[10px] uppercase font-bold">سرعة التعدين</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <i class="fas fa-microchip text-blue-500 text-xs"></i>
+                    <span id="mining-speed" class="font-bold text-sm">Level 1</span>
                 </div>
-
-                <div class="glass-card rounded-2xl p-4">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest">سجل النشاط</h3>
-                    <div id="log-screen" class="h-40 overflow-y-auto font-mono text-[10px] text-green-500 space-y-1">
-                        </div>
+            </div>
+            <div class="cyber-card p-4 rounded-2xl border-r-2 border-purple-500">
+                <p class="text-gray-500 text-[10px] uppercase font-bold">الإحالات</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <i class="fas fa-users text-purple-500 text-xs"></i>
+                    <span id="ref-count" class="font-bold text-sm">0</span>
                 </div>
             </div>
         </div>
-    </main>
+
+        <section class="cyber-card rounded-2xl p-5 border border-blue-500/20 bg-blue-500/5">
+            <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                <i class="fas fa-link text-blue-400"></i> ربط محفظة TON
+            </h3>
+            <div class="space-y-3">
+                <input type="text" id="wallet-input" placeholder="أدخل عنوان محفظتك هنا..." class="w-full bg-[#05070a] border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition">
+                <button class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-sm transition">ربط المحفظة الآن</button>
+            </div>
+        </section>
+
+        <section id="nodes" class="space-y-4">
+            <h3 class="font-bold text-lg px-2 flex items-center gap-2">
+                <i class="fas fa-server text-blue-500"></i> خوادم التعدين المتاحة
+            </h3>
+            
+            <div id="levels-list" class="space-y-3">
+                </div>
+        </section>
+
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/5 px-6 py-3 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex flex-col items-center gap-1 text-blue-500">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-[10px]">الرئيسية</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-400 transition cursor-pointer" onclick="copyRef()">
+                <i class="fas fa-share-nodes text-xl"></i>
+                <span class="text-[10px]">إحالة</span>
+            </div>
+            <div class="w-14 h-14 bg-blue-600 rounded-full -mt-10 flex items-center justify-center shadow-xl shadow-blue-600/40 border-4 border-[#05070a] gear-icon">
+                <i class="fas fa-cog text-white text-2xl"></i>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-gray-500">
+                <i class="fas fa-history text-xl"></i>
+                <span class="text-[10px]">السجلات</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-gray-500" onclick="copyWallet()">
+                <i class="fas fa-wallet text-xl"></i>
+                <span class="text-[10px]">إيداع</span>
+            </div>
+        </div>
+    </nav>
 
     <script>
-        // --- المنطق البرمجي (نفس الكود الخاص بك مع تحسينات طفيفة) ---
+        // الإعدادات البرمجية الأساسية
         const projectStartDate = new Date(2026, 0, 28);
         const myWallet = "UQBdgfwe8zbfSzhIy__hM8tR1VcJG-styXU30yq4kQVN0F-i";
         const levels = [
-            { id: 1, name: "Nano Node", price: 0, hoursToTarget: 72 },
-            { id: 2, name: "Bronze Chip", price: 3, hoursToTarget: 18 },
-            { id: 3, name: "Silver Blade", price: 10, hoursToTarget: 8 },
-            { id: 4, name: "Gold Rig", price: 25, hoursToTarget: 4 },
-            { id: 5, name: "Platinum Core", price: 60, hoursToTarget: 2 },
-            { id: 6, name: "Diamond Array", price: 150, hoursToTarget: 1 }
+            { id: 1, name: "Cloud Mini", price: 0, profit: "0.5 TON/Day" },
+            { id: 2, name: "Bronze Node", price: 3, profit: "1.5 TON/Day" },
+            { id: 3, name: "Silver Blade", price: 10, profit: "4.0 TON/Day" },
+            { id: 4, name: "Gold Master", price: 25, profit: "12 TON/Day" }
         ];
 
-        let balance = parseFloat(localStorage.getItem('ton_bal_final')) || 0;
-        let currentLvlId = parseInt(localStorage.getItem('ton_lvl_final')) || 1;
-        let referrals = parseInt(localStorage.getItem('ton_ref_final')) || 0;
-        const tonPrice = 5.40;
-
-        function updateProjectData() {
-            const now = new Date();
-            const diffMs = now - projectStartDate;
-            const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            document.getElementById('project-day-display').innerText = `PROJECT DAY: ${daysPassed >= 0 ? daysPassed : 0}`;
-
-            const promoEl = document.getElementById('promo-timer');
-            if (daysPassed < 5) {
-                const daysRemaining = 5 - daysPassed;
-                promoEl.innerText = `🎁 عرض الافتتاح: سحب مجاني متاح لمدة ${daysRemaining} يوم!`;
-                promoEl.className = "text-sm font-bold bg-white text-black px-4 py-1 rounded-full mining-anim";
-            } else {
-                promoEl.innerText = "⚠️ يتطلب السحب الآن 1 TON + 5 إحالات";
-                promoEl.className = "text-sm font-bold bg-red-600 text-white px-4 py-1 rounded-full";
-            }
-        }
+        let balance = parseFloat(localStorage.getItem('ton_bal_v2')) || 0;
+        let currentLvlId = parseInt(localStorage.getItem('ton_lvl_v2')) || 1;
+        let referrals = parseInt(localStorage.getItem('ton_ref_v2')) || 0;
 
         function render() {
             const list = document.getElementById('levels-list');
             list.innerHTML = '';
             levels.forEach(l => {
-                const active = l.id === currentLvlId;
+                const isActive = l.id === currentLvlId;
                 list.innerHTML += `
-                    <div class="glass-card p-5 rounded-2xl border ${active ? 'border-blue-500 bg-blue-500/10' : 'border-gray-800'} relative overflow-hidden transition hover:scale-[1.02]">
-                        ${active ? '<span class="absolute top-0 left-0 bg-blue-500 text-white text-[10px] px-3 py-1 rounded-br-lg font-bold">نشط حالياً</span>' : ''}
-                        <h4 class="font-bold text-lg mb-1 ${active ? 'text-blue-400' : ''}">${l.name}</h4>
-                        <div class="flex justify-between items-end">
+                    <div class="cyber-card p-4 rounded-2xl flex justify-between items-center border ${isActive ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/5'}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-500 font-bold">L${l.id}</div>
                             <div>
-                                <p class="text-xs text-gray-400">السرعة: الوصول لـ 1 TON في ${l.hoursToTarget >= 1 ? l.hoursToTarget+'h' : Math.round(l.hoursToTarget*60)+'m'}</p>
-                                <p class="text-sm font-bold text-yellow-500 mt-1">السعر: ${l.price} TON</p>
+                                <h4 class="font-bold text-sm">${l.name}</h4>
+                                <p class="text-[10px] text-green-500">الأرباح: ${l.profit}</p>
                             </div>
-                            <button class="px-6 py-2 rounded-xl text-sm font-bold transition ${active ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20'}" 
-                                ${active ? 'disabled' : ''} onclick="buy(${l.id}, ${l.price})">
-                                ${active ? 'نشط' : 'ترقية'}
-                            </button>
                         </div>
+                        <button onclick="buyNode(${l.id}, ${l.price})" ${isActive ? 'disabled' : ''} class="px-4 py-2 rounded-xl text-xs font-bold transition ${isActive ? 'bg-gray-800 text-gray-500' : 'bg-blue-600 text-white'}">
+                            ${isActive ? 'نشط حالياً' : 'ترقية ' + l.price + ' T'}
+                        </button>
                     </div>`;
             });
-            document.getElementById('wallet-display').innerText = myWallet;
-            document.getElementById('qr-code').src = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${myWallet}`;
-            updateProjectData();
+            document.getElementById('ref-count').innerText = referrals;
+            document.getElementById('mining-speed').innerText = levels.find(l=>l.id===currentLvlId).name;
         }
 
-        function buy(id, price) {
-            if (balance >= price) {
-                balance -= price;
-                currentLvlId = id;
-                localStorage.setItem('ton_lvl_final', id);
-                render();
-                log(`Successfully upgraded to: ${levels.find(l=>l.id===id).name}`);
-            } else { 
-                alert("❌ عذراً، رصيدك غير كافٍ. يرجى إيداع TON أولاً."); 
-            }
+        // محاكاة زيادة الرصيد
+        setInterval(() => {
+            balance += (0.00000010 * currentLvlId); // سرعة وهمية
+            document.getElementById('ton-balance').innerText = balance.toFixed(8);
+            document.getElementById('usd-balance').innerText = `≈ $${(balance * 5.4).toFixed(2)} USD`;
+            localStorage.setItem('ton_bal_v2', balance);
+        }, 1000);
+
+        function buyNode(id, price) {
+            alert("لإتمام عملية الترقية، يرجى إرسال " + price + " TON إلى عنوان الإيداع الخاص بك.");
+        }
+
+        function copyRef() {
+            navigator.clipboard.writeText(window.location.href + "?ref=" + Math.random().toString(36).substring(7));
+            alert("تم نسخ رابط الإحالة!");
+            referrals++; localStorage.setItem('ton_ref_v2', referrals); render();
+        }
+
+        function copyWallet() {
+            navigator.clipboard.writeText(myWallet);
+            alert("تم نسخ عنوان الإيداع: " + myWallet);
         }
 
         function withdraw() {
-            const diffMs = Date.now() - projectStartDate;
-            const isPromo = diffMs < (5 * 24 * 60 * 60 * 1000);
-
-            if (isPromo) {
-                if (balance > 0) {
-                    alert(`✅ سحب ترويجي مقبول!\nالمبلغ: ${balance.toFixed(4)} TON\nسيتم الإرسال لعنوان محفظتك فوراً.`);
-                    completeWithdraw();
-                } else { alert("الرصيد فارغ حالياً."); }
-            } else {
-                if (balance >= 1.0 && referrals >= 5) {
-                    alert(`✅ طلب سحب ناجح!\nالمبلغ: ${balance.toFixed(4)} TON.`);
-                    completeWithdraw();
-                } else {
-                    alert(`❌ شروط السحب:\n- رصيد 1.0 TON (لديك ${balance.toFixed(2)})\n- 5 إحالات (لديك ${referrals})`);
-                }
-            }
-        }
-
-        function completeWithdraw() {
-            balance = 0;
-            localStorage.setItem('ton_bal_final', balance);
-            log("Transaction processed: Success.");
-        }
-
-        setInterval(() => {
-            const currentLevel = levels.find(l=>l.id===currentLvlId);
-            const speed = 1.0 / (currentLevel.hoursToTarget * 3600);
-            balance += speed;
-            document.getElementById('ton-balance').innerText = balance.toFixed(8);
-            document.getElementById('usd-balance').innerText = `≈ $${(balance * tonPrice).toFixed(2)} USD`;
-            document.getElementById('ref-count').innerText = referrals;
-            localStorage.setItem('ton_bal_final', balance);
-        }, 1000);
-
-        function log(m) {
-            const s = document.getElementById('log-screen');
-            const now = new Date().toLocaleTimeString();
-            s.innerHTML = `<div class="mb-1"><span class="text-gray-600">[${now}]</span> ${m}</div>` + s.innerHTML;
-        }
-
-        function copyWallet() { navigator.clipboard.writeText(myWallet); alert("Address Copied!"); }
-        function copyRef() { 
-            navigator.clipboard.writeText(window.location.href + "?ref=user" + Math.floor(Math.random()*999)); 
-            alert("تم نسخ الرابط! (تمت إضافة إحالة تجريبية)");
-            if(referrals < 10) { referrals++; localStorage.setItem('ton_ref_final', referrals); }
+            alert("عذراً، تحتاج إلى 5 إحالات نشطة ورصيد 1 TON على الأقل للسحب.");
         }
 
         render();
-        log("System initialized... Stable connection.");
-        setInterval(() => log("Scanning network nodes... Safe."), 15000);
     </script>
 </body>
 </html>
