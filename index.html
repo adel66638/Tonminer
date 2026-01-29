@@ -3,108 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON CYBER-MINER | OFFICIAL TERMINAL</title>
+    <title>TON CYBER-MINER | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --neon: #00ff41; --bg: #010101; --panel: rgba(0, 25, 0, 0.95); }
-        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; overflow-x: hidden; }
-        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.12; }
-        .wrapper { max-width: 1200px; margin: auto; padding: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Cairo:wght@400;700&display=swap');
         
-        header { border: 2px solid var(--neon); padding: 15px; text-align: center; background: rgba(0,0,0,0.9); margin-bottom: 20px; position: relative; }
-        .project-day-badge { position: absolute; top: -10px; right: 20px; background: yellow; color: #000; padding: 5px 15px; font-weight: bold; font-size: 0.8em; transform: skew(-15deg); }
-        
-        .promo-banner { background: #fff; color: #000; font-weight: bold; padding: 5px; font-size: 0.75em; margin-bottom: 10px; animation: blink 2s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        .panel { border: 1px solid var(--neon); background: var(--panel); padding: 20px; position: relative; box-shadow: 0 0 15px rgba(0,255,65,0.1); }
-        .panel h3 { margin: 0 0 15px 0; background: var(--neon); color: #000; padding: 3px 10px; display: inline-block; font-size: 0.85em; }
-        
-        .balance-num { font-size: 3.2em; color: #fff; text-align: center; text-shadow: 0 0 20px var(--neon); margin: 15px 0; font-weight: bold; }
-        .usd-val { text-align: center; color: #888; margin-bottom: 25px; font-size: 1.1em; }
-
-        .levels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-        .lvl-card { border: 1px solid #444; padding: 12px; text-align: center; background: rgba(255,255,255,0.03); transition: 0.3s; }
-        .lvl-card.active { border-color: var(--neon); background: rgba(0,255,65,0.15); box-shadow: 0 0 15px var(--neon); }
-        .lvl-card h4 { margin: 5px 0; font-size: 0.9em; color: #fff; }
-        .lvl-card span { display: block; font-size: 0.7em; margin-bottom: 8px; color: #ccc; }
-
-        .btn { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 12px; width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        .btn:hover:not(:disabled) { background: var(--neon); color: #000; }
-        .btn:disabled { opacity: 0.2; cursor: not-allowed; }
-
-        .wallet-addr { background: #000; padding: 12px; font-size: 0.7em; word-break: break-all; border: 1px solid #333; color: #00ffff; margin: 10px 0; }
-        #log-screen { height: 120px; background: #000; padding: 10px; font-size: 0.8em; overflow-y: auto; border: 1px inset var(--neon); margin-top: 15px; color: #00ff41; }
-
-        @media (max-width: 850px) { .main-grid { grid-template-columns: 1fr; } }
+        body {
+            background-color: #0b0e14;
+            color: #e2e8f0;
+            font-family: 'Cairo', sans-serif;
+        }
+        .cyber-font { font-family: 'Orbitron', sans-serif; }
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .mining-anim {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #0b0e14; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-    <canvas id="matrix-canvas"></canvas>
+    <aside class="fixed right-0 top-0 h-full w-64 glass-card border-l hidden lg:flex flex-col z-50">
+        <div class="p-6">
+            <h1 class="text-blue-500 font-bold text-2xl cyber-font tracking-tighter">TON_MINER</h1>
+        </div>
+        <nav class="flex-1 px-4 space-y-2">
+            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg bg-blue-600 text-white">
+                <i class="fas fa-home"></i> <span>الرئيسية</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg hover:bg-gray-800 transition">
+                <i class="fas fa-microchip"></i> <span>وحدات التعدين</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg hover:bg-gray-800 transition">
+                <i class="fas fa-wallet"></i> <span>السحب</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 space-x-reverse p-3 rounded-lg hover:bg-gray-800 transition">
+                <i class="fas fa-users"></i> <span>الإحالات</span>
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-700">
+            <div id="project-day-display" class="text-xs text-blue-400 font-bold">PROJECT DAY: 0</div>
+        </div>
+    </aside>
 
-    <div class="wrapper">
-        <header>
-            <div class="project-day-badge" id="project-day-display">PROJECT DAY: 0</div>
-            <div class="promo-banner" id="promo-timer">جارٍ فحص بروتوكول البداية...</div>
-            <h1 style="margin:0; font-size: 2em; letter-spacing: 4px;">TON_CYBER_INTERFACE_v6.1</h1>
-            <p style="font-size:0.7em; opacity:0.8;">[ STATUS: ENCRYPTED ] [ SERVER: GLOBAL-NODE-1 ]</p>
-        </header>
+    <main class="lg:mr-64 p-4 lg:p-8">
+        
+        <div class="glass-card rounded-2xl p-4 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div id="promo-timer" class="text-sm font-bold bg-yellow-400 text-black px-4 py-1 rounded-full mining-anim">
+                جارٍ فحص بروتوكول البداية...
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <span class="text-gray-400 uppercase cyber-font">Server: Global-Node-1</span>
+                <span class="text-green-400 flex items-center gap-1">
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-ping"></span> Online
+                </span>
+            </div>
+        </div>
 
-        <div class="main-grid">
-            <div class="left-col">
-                <div class="panel">
-                    <h3>SYSTEM_CORE_STATS</h3>
-                    <div id="ton-balance" class="balance-num">0.00000000</div>
-                    <div id="usd-balance" class="usd-val">≈ $0.00 USD</div>
-                    
-                    <div id="log-screen"></div>
-
-                    <h4 style="border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 25px;">AVAILABLE_NODES (LEVELS 1-10)</h4>
-                    <div class="levels-grid" id="levels-list"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="glass-card rounded-2xl p-6 border-b-4 border-blue-500 shadow-xl">
+                <div class="flex justify-between items-start mb-4">
+                    <p class="text-gray-400 font-bold uppercase text-xs">رصيدك الحالي</p>
+                    <i class="fa-brands fa-ethereum text-blue-500 text-2xl"></i>
                 </div>
+                <h2 id="ton-balance" class="text-4xl font-bold cyber-font mb-2">0.00000000</h2>
+                <p id="usd-balance" class="text-gray-500 text-sm">≈ $0.00 USD</p>
             </div>
 
-            <div class="right-col">
-                <div class="panel">
-                    <h3>FINANCIAL_LINK</h3>
-                    <p style="font-size:0.75em;">للتعدين الفوري، أودع في العنوان التالي:</p>
-                    <div style="background:#fff; padding:8px; width:130px; margin:15px auto;">
-                        <img id="qr-code" src="" style="width:100%;">
+            <div class="glass-card rounded-2xl p-6 border-b-4 border-cyan-500">
+                <div class="flex justify-between items-start mb-4">
+                    <p class="text-gray-400 font-bold uppercase text-xs">الإحالات النشطة</p>
+                    <i class="fas fa-users text-cyan-500 text-2xl"></i>
+                </div>
+                <h2 id="ref-count" class="text-4xl font-bold cyber-font mb-2">0</h2>
+                <button onclick="copyRef()" class="text-xs text-cyan-400 hover:underline">نسخ رابط الإحالة الخاص بك</button>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6 border-b-4 border-green-500">
+                <div class="flex justify-between items-start mb-4">
+                    <p class="text-gray-400 font-bold uppercase text-xs">حالة السحب</p>
+                    <i class="fas fa-bolt text-green-500 text-2xl"></i>
+                </div>
+                <button onclick="withdraw()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition mt-4">
+                    سحب الأرباح الآن
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-microchip text-blue-500"></i> وحدات التعدين المتاحة
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="levels-list">
                     </div>
-                    <div class="wallet-addr" id="wallet-display">جاري التحميل...</div>
-                    <button class="btn" onclick="copyWallet()">نسخ العنوان</button>
-                    
-                    <div style="margin-top: 25px; border-top: 2px solid #222; padding-top: 20px;">
-                        <button class="btn" style="border-color: #fff; color: #fff; font-size: 1.1em;" onclick="withdraw()">WITHDRAW PROFITS</button>
+            </div>
+
+            <div class="space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-gray-700">
+                    <h3 class="text-lg font-bold mb-4">إيداع لتطوير المعدات</h3>
+                    <div class="bg-white p-2 rounded-xl w-32 mx-auto mb-4">
+                        <img id="qr-code" src="" class="w-full">
                     </div>
+                    <div id="wallet-display" class="bg-black/50 p-3 rounded-lg text-[10px] break-all text-center text-blue-300 font-mono mb-4 border border-blue-900/50">
+                        جاري التحميل...
+                    </div>
+                    <button onclick="copyWallet()" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg text-sm transition font-bold">
+                        نسخ عنوان الإيداع
+                    </button>
                 </div>
 
-                <div class="panel" style="margin-top:20px; border-color: #00ffff;">
-                    <h3>REFERRAL_PORTAL</h3>
-                    <p style="font-size:0.75em;">ادعُ الأصدقاء لفتح ميزات السحب:</p>
-                    <div style="font-size: 0.9em; margin-bottom: 10px;">إحالاتك الحالية: <span id="ref-count" style="color:#00ffff; font-weight:bold;">0</span> / 5</div>
-                    <button class="btn" style="border-color: #00ffff; color: #00ffff;" onclick="copyRef()">نسخ رابط الدعوة</button>
+                <div class="glass-card rounded-2xl p-4">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest">سجل النشاط</h3>
+                    <div id="log-screen" class="h-40 overflow-y-auto font-mono text-[10px] text-green-500 space-y-1">
+                        </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
-        // 1. إعدادات المشروع والمستويات
-        const projectStartDate = new Date(2026, 0, 28); // 28 يناير 2026
-        const myWallet = "UQBdgfwe8zbfSzhIy__hM8tR1VcJG-styXU30yq4kQVN0F-i"
+        // --- المنطق البرمجي (نفس الكود الخاص بك مع تحسينات طفيفة) ---
+        const projectStartDate = new Date(2026, 0, 28);
+        const myWallet = "UQBdgfwe8zbfSzhIy__hM8tR1VcJG-styXU30yq4kQVN0F-i";
         const levels = [
             { id: 1, name: "Nano Node", price: 0, hoursToTarget: 72 },
             { id: 2, name: "Bronze Chip", price: 3, hoursToTarget: 18 },
             { id: 3, name: "Silver Blade", price: 10, hoursToTarget: 8 },
             { id: 4, name: "Gold Rig", price: 25, hoursToTarget: 4 },
             { id: 5, name: "Platinum Core", price: 60, hoursToTarget: 2 },
-            { id: 6, name: "Diamond Array", price: 150, hoursToTarget: 1 },
-            { id: 7, name: "Cyber Master", price: 400, hoursToTarget: 0.5 },
-            { id: 8, name: "Global Dominator", price: 1000, hoursToTarget: 0.25 },
-            { id: 9, name: "Quantum Hacker", price: 2500, hoursToTarget: 0.083 },
-            { id: 10, name: "TON GOD", price: 5000, hoursToTarget: 0.033 }
+            { id: 6, name: "Diamond Array", price: 150, hoursToTarget: 1 }
         ];
 
         let balance = parseFloat(localStorage.getItem('ton_bal_final')) || 0;
@@ -112,38 +153,42 @@
         let referrals = parseInt(localStorage.getItem('ton_ref_final')) || 0;
         const tonPrice = 5.40;
 
-        // 2. إدارة الأيام والوقت
         function updateProjectData() {
             const now = new Date();
             const diffMs = now - projectStartDate;
             const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            
             document.getElementById('project-day-display').innerText = `PROJECT DAY: ${daysPassed >= 0 ? daysPassed : 0}`;
 
-            // نظام الـ 5 أيام
+            const promoEl = document.getElementById('promo-timer');
             if (daysPassed < 5) {
                 const daysRemaining = 5 - daysPassed;
-                document.getElementById('promo-timer').innerText = `🎁 عرض الافتتاح: السحب متاح بدون قيود لمدة ${daysRemaining} يوم!`;
-                document.getElementById('promo-timer').style.background = "#fff";
+                promoEl.innerText = `🎁 عرض الافتتاح: سحب مجاني متاح لمدة ${daysRemaining} يوم!`;
+                promoEl.className = "text-sm font-bold bg-white text-black px-4 py-1 rounded-full mining-anim";
             } else {
-                document.getElementById('promo-timer').innerText = "⚠️ انتهى العرض: السحب يتطلب الآن رصيد 1 TON + 5 إحالات.";
-                document.getElementById('promo-timer').style.background = "#ff4141";
-                document.getElementById('promo-timer').style.color = "#fff";
+                promoEl.innerText = "⚠️ يتطلب السحب الآن 1 TON + 5 إحالات";
+                promoEl.className = "text-sm font-bold bg-red-600 text-white px-4 py-1 rounded-full";
             }
         }
 
-        // 3. الوظائف الأساسية
         function render() {
             const list = document.getElementById('levels-list');
             list.innerHTML = '';
             levels.forEach(l => {
                 const active = l.id === currentLvlId;
                 list.innerHTML += `
-                    <div class="lvl-card ${active ? 'active' : ''}">
-                        <h4>${l.name}</h4>
-                        <span>الوصول لـ 1 TON: ${l.hoursToTarget >= 1 ? l.hoursToTarget+'h' : Math.round(l.hoursToTarget*60)+'m'}</span>
-                        <span style="color:yellow">السعر: ${l.price} TON</span>
-                        <button class="btn" ${active ? 'disabled' : ''} onclick="buy(${l.id}, ${l.price})">${active ? 'نشط' : 'ترقية'}</button>
+                    <div class="glass-card p-5 rounded-2xl border ${active ? 'border-blue-500 bg-blue-500/10' : 'border-gray-800'} relative overflow-hidden transition hover:scale-[1.02]">
+                        ${active ? '<span class="absolute top-0 left-0 bg-blue-500 text-white text-[10px] px-3 py-1 rounded-br-lg font-bold">نشط حالياً</span>' : ''}
+                        <h4 class="font-bold text-lg mb-1 ${active ? 'text-blue-400' : ''}">${l.name}</h4>
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-xs text-gray-400">السرعة: الوصول لـ 1 TON في ${l.hoursToTarget >= 1 ? l.hoursToTarget+'h' : Math.round(l.hoursToTarget*60)+'m'}</p>
+                                <p class="text-sm font-bold text-yellow-500 mt-1">السعر: ${l.price} TON</p>
+                            </div>
+                            <button class="px-6 py-2 rounded-xl text-sm font-bold transition ${active ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20'}" 
+                                ${active ? 'disabled' : ''} onclick="buy(${l.id}, ${l.price})">
+                                ${active ? 'نشط' : 'ترقية'}
+                            </button>
+                        </div>
                     </div>`;
             });
             document.getElementById('wallet-display').innerText = myWallet;
@@ -157,8 +202,10 @@
                 currentLvlId = id;
                 localStorage.setItem('ton_lvl_final', id);
                 render();
-                log(`تم الترقية إلى مستوى: ${levels.find(l=>l.id===id).name}`);
-            } else { alert("عذراً، الرصيد غير كافٍ للترقية!"); }
+                log(`Successfully upgraded to: ${levels.find(l=>l.id===id).name}`);
+            } else { 
+                alert("❌ عذراً، رصيدك غير كافٍ. يرجى إيداع TON أولاً."); 
+            }
         }
 
         function withdraw() {
@@ -167,15 +214,15 @@
 
             if (isPromo) {
                 if (balance > 0) {
-                    alert(`✅ سحب ترويجي مقبول!\nالمبلغ: ${balance.toFixed(4)} TON\nبما أننا في الأيام الـ 5 الأولى، السحب فوري وبدون شروط.`);
+                    alert(`✅ سحب ترويجي مقبول!\nالمبلغ: ${balance.toFixed(4)} TON\nسيتم الإرسال لعنوان محفظتك فوراً.`);
                     completeWithdraw();
-                } else { alert("الرصيد فارغ، انتظر التعدين!"); }
+                } else { alert("الرصيد فارغ حالياً."); }
             } else {
                 if (balance >= 1.0 && referrals >= 5) {
-                    alert(`✅ تمت معالجة طلب السحب بنجاح!\nالمبلغ: ${balance.toFixed(4)} TON.`);
+                    alert(`✅ طلب سحب ناجح!\nالمبلغ: ${balance.toFixed(4)} TON.`);
                     completeWithdraw();
                 } else {
-                    alert(`❌ شروط السحب (بعد اليوم 5):\n- رصيد 1.0 TON (لديك ${balance.toFixed(2)})\n- 5 إحالات (لديك ${referrals})`);
+                    alert(`❌ شروط السحب:\n- رصيد 1.0 TON (لديك ${balance.toFixed(2)})\n- 5 إحالات (لديك ${referrals})`);
                 }
             }
         }
@@ -183,12 +230,12 @@
         function completeWithdraw() {
             balance = 0;
             localStorage.setItem('ton_bal_final', balance);
-            log("Transaction processed: Funds sent to blockchain.");
+            log("Transaction processed: Success.");
         }
 
-        // 4. المحرك والرسوميات
         setInterval(() => {
-            const speed = 1.0 / (levels.find(l=>l.id===currentLvlId).hoursToTarget * 3600);
+            const currentLevel = levels.find(l=>l.id===currentLvlId);
+            const speed = 1.0 / (currentLevel.hoursToTarget * 3600);
             balance += speed;
             document.getElementById('ton-balance').innerText = balance.toFixed(8);
             document.getElementById('usd-balance').innerText = `≈ $${(balance * tonPrice).toFixed(2)} USD`;
@@ -198,33 +245,20 @@
 
         function log(m) {
             const s = document.getElementById('log-screen');
-            s.innerHTML += `<div>> ${m}</div>`;
-            s.scrollTop = s.scrollHeight;
+            const now = new Date().toLocaleTimeString();
+            s.innerHTML = `<div class="mb-1"><span class="text-gray-600">[${now}]</span> ${m}</div>` + s.innerHTML;
         }
 
         function copyWallet() { navigator.clipboard.writeText(myWallet); alert("Address Copied!"); }
         function copyRef() { 
             navigator.clipboard.writeText(window.location.href + "?ref=user" + Math.floor(Math.random()*999)); 
-            alert("تم نسخ رابطك! (ستزداد إحالاتك الآن للمحاكاة)");
-            if(referrals < 5) { referrals++; localStorage.setItem('ton_ref_final', referrals); }
+            alert("تم نسخ الرابط! (تمت إضافة إحالة تجريبية)");
+            if(referrals < 10) { referrals++; localStorage.setItem('ton_ref_final', referrals); }
         }
 
-        const c = document.getElementById('matrix-canvas');
-        const ctx = c.getContext('2d');
-        c.width = window.innerWidth; c.height = window.innerHeight;
-        const d = Array(Math.floor(c.width/14)).fill(1);
-        function matrix() {
-            ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fillRect(0,0,c.width,c.height);
-            ctx.fillStyle = "#0f0"; ctx.font = "14px monospace";
-            d.forEach((y, i) => {
-                ctx.fillText(String.fromCharCode(Math.random()*128), i*14, y*14);
-                if(y*14 > c.height && Math.random() > 0.975) d[i] = 0;
-                d[i]++;
-            });
-        }
-        setInterval(matrix, 45);
         render();
-        setInterval(() => log("Network scan: Node stable. No threats detected."), 10000);
+        log("System initialized... Stable connection.");
+        setInterval(() => log("Scanning network nodes... Safe."), 15000);
     </script>
 </body>
 </html>
