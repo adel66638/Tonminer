@@ -901,11 +901,27 @@
           </div>
         </div>
 
-        <!-- WITHDRAW -->
+        <!-- COLLECT + WITHDRAW -->
         <div id="withdraw-section">
-          <button class="btn btn-primary" id="withdraw-btn" onclick="openWithdraw()">💸 Withdraw</button>
-          <div id="withdraw-warning" style="display:none; margin-top:10px; padding:10px; background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:8px; font-size:12px; color:var(--gold)">
-            ⚠️ Minimum withdraw is <strong>0.1 TON</strong>. Your current balance: <span id="current-balance-warn">0</span> TON.
+
+          <!-- زر جمع الأرباح - يظهر دائماً أثناء التعدين -->
+          <div id="collect-section" style="margin-bottom:12px">
+            <div id="collect-earned-wrap" style="display:none; text-align:center; margin-bottom:8px; padding:10px; background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.25); border-radius:10px">
+              <div style="font-size:11px; color:var(--muted); margin-bottom:4px">⛏️ Earned so far</div>
+              <div style="font-family:'Orbitron',monospace; font-size:20px; font-weight:900; color:var(--green)">+<span id="collect-amount">0.000000</span> TON</div>
+            </div>
+            <button class="btn" id="collect-btn" onclick="collectNow()" style="background:linear-gradient(135deg,#00C853,#00E676); color:#003300; font-weight:900; font-size:15px; padding:13px; margin-bottom:10px">
+              💰 Collect Earnings
+            </button>
+          </div>
+
+          <!-- زر السحب -->
+          <button class="btn btn-primary" id="withdraw-btn" onclick="openWithdraw()" style="font-size:15px; letter-spacing:1px">
+            💸 Withdraw TON
+          </button>
+          <div id="withdraw-warning" style="display:none; margin-top:10px; padding:10px; background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:8px; font-size:12px; color:var(--gold); text-align:center">
+            ⚠️ Minimum withdraw is <strong>0.1 TON</strong><br>
+            <span style="font-size:11px; color:var(--muted)">Balance: <span id="current-balance-warn">0</span> TON</span>
           </div>
         </div>
       </div>
@@ -1219,15 +1235,15 @@ const LAUNCH_DATE = new Date('2026-03-06').getTime();
 const LEVELS = [
   { level: 0,  name: 'Free',         price: 0,  speed: 0.05, interval: 48 },
   { level: 1,  name: 'Beginner',     price: 0,  speed: 0.1,  interval: 48 },
-  { level: 2,  name: 'Trainee',      price: 1,  speed: 0.3,  interval: 48 },
-  { level: 3,  name: 'Intermediate', price: 2,  speed: 0.6,  interval: 48 },
-  { level: 4,  name: 'Advanced',     price: 4,  speed: 1.0,  interval: 48 },
-  { level: 5,  name: 'Professional', price: 6,  speed: 2.0,  interval: 48 },
+  { level: 2,  name: 'Trainee',      price: 1,  speed: 0.5,  interval: 48 },
+  { level: 3,  name: 'Intermediate', price: 2,  speed: 1.0,  interval: 48 },
+  { level: 4,  name: 'Advanced',     price: 4,  speed: 2.0,  interval: 48 },
+  { level: 5,  name: 'Professional', price: 6,  speed: 3.0,  interval: 48 },
   { level: 6,  name: 'Expert',       price: 8,  speed: 4.0,  interval: 48 },
-  { level: 7,  name: 'Master',       price: 10, speed: 8.0,  interval: 48 },
-  { level: 8,  name: 'Elite',        price: 12, speed: 15,   interval: 48 },
-  { level: 9,  name: 'Legend',       price: 14, speed: 30,   interval: 48 },
-  { level: 10, name: 'Grand Master', price: 16, speed: 60,   interval: 48 },
+  { level: 7,  name: 'Master',       price: 10, speed: 5.0,  interval: 48 },
+  { level: 8,  name: 'Elite',        price: 12, speed: 6.0,  interval: 48 },
+  { level: 9,  name: 'Legend',       price: 14, speed: 7.0,  interval: 48 },
+  { level: 10, name: 'Grand Master', price: 16, speed: 8.0,  interval: 48 },
 ];
 
 function getCommission(level) {
@@ -1475,12 +1491,19 @@ function checkWithdraw() {
   const withdrawBtn = document.getElementById('withdraw-btn');
   const warning = document.getElementById('withdraw-warning');
 
+  // زر السحب يظهر دائماً
+  withdrawBtn.style.display = 'block';
+
   if (user.balance < 0.1) {
-    withdrawBtn.style.display = 'none';
+    withdrawBtn.disabled = true;
+    withdrawBtn.style.opacity = '0.5';
+    withdrawBtn.style.cursor = 'not-allowed';
     warning.style.display = 'block';
     document.getElementById('current-balance-warn').textContent = user.balance.toFixed(4);
   } else {
-    withdrawBtn.style.display = 'block';
+    withdrawBtn.disabled = false;
+    withdrawBtn.style.opacity = '1';
+    withdrawBtn.style.cursor = 'pointer';
     warning.style.display = 'none';
   }
 }
@@ -1533,11 +1556,33 @@ function renderMiningTimer() {
     const earnedSoFar = ratePerMs * e;
     document.getElementById('live-ton-counter').textContent = earnedSoFar.toFixed(6);
 
+    // Update collect amount live
+    const collectWrap = document.getElementById('collect-earned-wrap');
+    const collectAmt = document.getElementById('collect-amount');
+    if (collectWrap) collectWrap.style.display = 'block';
+    if (collectAmt) collectAmt.textContent = earnedSoFar.toFixed(6);
+
     // Background progress tracking (hidden)
     const pct = Math.round((e / total) * 100);
     document.getElementById('progress-fill').style.width = pct + '%';
     document.getElementById('progress-pct').textContent = pct + '%';
   }, 100); // update every 100ms for smooth counter
+}
+
+function collectMining() {
+  const user = db.users.find(u => u.id === currentUser.id);
+  if (!user.pendingMining || user.pendingMining <= 0) return;
+  const earned = user.pendingMining;
+  user.balance = parseFloat((user.balance + earned).toFixed(4));
+  user.totalEarned = (user.totalEarned || 0) + earned;
+  user.pendingMining = 0;
+  user.txHistory.unshift({ type: 'mine', amount: earned, date: Date.now(), desc: 'Mining Collected' });
+  saveDb();
+  currentUser = user;
+  document.getElementById('collect-section').style.display = 'none';
+  document.getElementById('balance-display').textContent = user.balance.toFixed(4);
+  checkWithdraw();
+  showToast('💰 ' + earned.toFixed(4) + ' TON Collected!');
 }
 
 function completeMining() {
@@ -1555,6 +1600,30 @@ function completeMining() {
   document.getElementById('balance-display').textContent = user.balance.toFixed(4);
   showToast(`🎉 Mined ${lvl.speed} TON!`);
   setTimeout(renderApp, 2000);
+}
+
+function collectNow() {
+  const user = db.users.find(u => u.id === currentUser.id);
+  if (!user.miningStart) { showToast('⛏️ Start mining first!'); return; }
+  const lvl = LEVELS[user.level - 1];
+  const total = lvl.interval * 3600 * 1000;
+  const elapsed = Date.now() - user.miningStart;
+  const earned = parseFloat(((lvl.speed / total) * Math.min(elapsed, total)).toFixed(6));
+  if (earned <= 0) { showToast('⏳ Nothing to collect yet'); return; }
+  user.balance = parseFloat((user.balance + earned).toFixed(4));
+  user.totalEarned = (user.totalEarned || 0) + earned;
+  user.miningStart = null;
+  user.txHistory.unshift({ type: 'mine', amount: earned, date: Date.now(), desc: 'Mining Collected' });
+  saveDb();
+  currentUser = user;
+  if (window.timerInterval) clearInterval(window.timerInterval);
+  document.getElementById('mining-counter-wrap').style.display = 'none';
+  document.getElementById('orb-status').textContent = 'Start';
+  document.getElementById('orb-sub').textContent = 'Mining';
+  document.getElementById('balance-display').textContent = user.balance.toFixed(4);
+  checkWithdraw();
+  showToast('💰 ' + earned.toFixed(4) + ' TON Collected!');
+  setTimeout(renderApp, 500);
 }
 
 // ===== REFERRAL =====
@@ -1743,6 +1812,10 @@ function confirmUpgrade() {
 
 function openWithdraw() {
   const user = db.users.find(u => u.id === currentUser.id);
+  if (user.balance < 0.1) {
+    showToast('❌ Minimum withdrawal is 0.1 TON');
+    return;
+  }
   document.getElementById('withdraw-modal-content').innerHTML = `
     <div class="info-row">
       <span class="label">Available Balance</span>
@@ -1788,25 +1861,28 @@ function confirmWithdraw() {
   if (amount < 0.1) { showToast('❌ Minimum withdrawal is 0.1 TON'); return; }
   if (amount > user.balance) { showToast('❌ Insufficient balance'); return; }
 
+  // خصم الرصيد فوراً - سحب تلقائي
+  user.balance = parseFloat((user.balance - amount).toFixed(4));
+  user.totalWithdrawn = (user.totalWithdrawn || 0) + amount;
+  user.txHistory.unshift({ type: 'withdraw', amount: amount, date: Date.now(), desc: 'Withdrawal Successful ✅' });
+
   const withdrawal = {
     id: Date.now(),
     userId: user.id,
     userName: user.name,
     wallet: user.wallet,
     amount: amount,
-    status: 'pending',
+    status: 'done',
     date: Date.now()
   };
 
   db.withdrawals.push(withdrawal);
-  user.txHistory.unshift({ type: 'withdraw', amount: amount, date: Date.now(), desc: 'Withdrawal request Pending' });
-  user.balance = parseFloat((user.balance - amount).toFixed(4));
   saveDb();
   currentUser = user;
 
   closeModal('withdraw-modal');
   renderApp();
-  showToast('✅ Withdrawal request submitted!');
+  showToast('✅ ' + amount.toFixed(4) + ' TON Withdrawn Successfully!');
 }
 
 // ===== ADMIN =====
@@ -2012,6 +2088,8 @@ function approveWithdrawal(wId) {
   const w = db.withdrawals.find(x => x.id === wId);
   if (w) {
     w.status = 'done';
+    const userBal = db.users.find(u => u.id === w.userId);
+    if (userBal) { userBal.balance = parseFloat((userBal.balance - w.amount).toFixed(4)); if (userBal.balance < 0) userBal.balance = 0; }
     const user = db.users.find(u => u.id === w.userId);
     if (user) {
       user.totalWithdrawn += w.amount;
