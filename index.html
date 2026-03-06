@@ -988,10 +988,37 @@
   <!-- WALLET TAB -->
   <div id="tab-wallet" class="tab-content" style="display:none">
     <div class="container pb-nav" style="padding-top:20px">
-      <div class="card">
-        <div class="wallet-display">
-          <div style="font-size:12px; color:var(--muted); margin-bottom:8px">Total Balance</div>
+      <div class="card" style="border-color:rgba(0,170,255,0.4)">
+        <div class="wallet-display" style="padding:10px 0">
+          <div style="font-size:12px; color:var(--muted); margin-bottom:6px">💰 Total Balance</div>
           <div class="wallet-balance"><span id="wallet-balance-display">0.00</span> <span class="wallet-unit">TON</span></div>
+        </div>
+        <!-- ملخص الأرباح -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:14px 0">
+          <div style="background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.2); border-radius:10px; padding:10px; text-align:center">
+            <div style="font-size:10px; color:var(--muted); margin-bottom:4px">⛏️ Mining</div>
+            <div style="font-family:'Orbitron',monospace; font-size:12px; font-weight:700; color:var(--green)" id="wallet-mining-earned">0.00</div>
+            <div style="font-size:9px; color:var(--muted)">TON</div>
+          </div>
+          <div style="background:rgba(255,184,0,0.08); border:1px solid rgba(255,184,0,0.2); border-radius:10px; padding:10px; text-align:center">
+            <div style="font-size:10px; color:var(--muted); margin-bottom:4px">👥 Referral</div>
+            <div style="font-family:'Orbitron',monospace; font-size:12px; font-weight:700; color:var(--gold)" id="wallet-ref-earned">0.00</div>
+            <div style="font-size:9px; color:var(--muted)">TON</div>
+          </div>
+          <div style="background:rgba(0,136,204,0.08); border:1px solid rgba(0,136,204,0.2); border-radius:10px; padding:10px; text-align:center">
+            <div style="font-size:10px; color:var(--muted); margin-bottom:4px">📤 Withdrawn</div>
+            <div style="font-family:'Orbitron',monospace; font-size:12px; font-weight:700; color:var(--ton-light)" id="wallet-withdrawn">0.00</div>
+            <div style="font-size:9px; color:var(--muted)">TON</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <!-- زر السحب -->
+        <button class="btn btn-primary" id="wallet-withdraw-btn" onclick="openWithdrawFromWallet()" style="margin-bottom:10px; font-size:15px">
+          💸 Withdraw TON
+        </button>
+        <div id="wallet-withdraw-warning" style="display:none; padding:10px; background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:8px; font-size:12px; color:var(--gold); text-align:center">
+          ⚠️ Minimum withdraw is <strong>0.1 TON</strong><br>
+          <span style="font-size:11px; color:var(--muted)">Balance: <span id="wallet-balance-warn">0</span> TON</span>
         </div>
         <div class="divider"></div>
         <div class="info-row">
@@ -1558,6 +1585,15 @@ function renderReferral() {
 }
 
 // ===== WALLET =====
+function openWithdrawFromWallet() {
+  const user = db.users.find(u => u.id === currentUser.id);
+  if (user.balance < 0.1) {
+    showToast('❌ Minimum withdrawal is 0.1 TON');
+    return;
+  }
+  openWithdraw();
+}
+
 function renderWallet() {
   const user = db.users.find(u => u.id === currentUser.id);
   document.getElementById('wallet-balance-display').textContent = user.balance.toFixed(4);
@@ -1565,6 +1601,26 @@ function renderWallet() {
   document.getElementById('total-earned-display').textContent = user.totalEarned.toFixed(4) + ' TON';
   document.getElementById('total-withdrawn-display').textContent = user.totalWithdrawn.toFixed(4) + ' TON';
   document.getElementById('ref-commission-display').textContent = user.refCommission.toFixed(4) + ' TON';
+
+  // ملخص الأرباح
+  const miningEarned = user.txHistory.filter(t => t.type === 'mine').reduce((s, t) => s + t.amount, 0);
+  document.getElementById('wallet-mining-earned').textContent = miningEarned.toFixed(4);
+  document.getElementById('wallet-ref-earned').textContent = user.refCommission.toFixed(4);
+  document.getElementById('wallet-withdrawn').textContent = user.totalWithdrawn.toFixed(4);
+
+  // زر السحب
+  const warnEl = document.getElementById('wallet-withdraw-warning');
+  const btnEl = document.getElementById('wallet-withdraw-btn');
+  if (user.balance < 0.1) {
+    btnEl.disabled = true;
+    btnEl.style.opacity = '0.5';
+    warnEl.style.display = 'block';
+    document.getElementById('wallet-balance-warn').textContent = user.balance.toFixed(4);
+  } else {
+    btnEl.disabled = false;
+    btnEl.style.opacity = '1';
+    warnEl.style.display = 'none';
+  }
 
   const txList = document.getElementById('tx-history');
   if (!user.txHistory.length) {
