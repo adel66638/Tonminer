@@ -1605,18 +1605,16 @@ function collectNow() {
   if (earned <= 0) { showToast('⏳ Nothing to collect yet'); return; }
   user.balance = parseFloat((user.balance + earned).toFixed(4));
   user.totalEarned = (user.totalEarned || 0) + earned;
-  user.miningStart = null;
   user.txHistory.unshift({ type: 'mine', amount: earned, date: Date.now(), desc: 'Mining Collected' });
+  // إعادة تشغيل التعدين تلقائياً
+  user.miningStart = Date.now();
   saveDb();
   currentUser = user;
   if (window.timerInterval) clearInterval(window.timerInterval);
-  document.getElementById('mining-counter-wrap').style.display = 'none';
-  document.getElementById('orb-status').textContent = 'Start';
-  document.getElementById('orb-sub').textContent = 'Mining';
   document.getElementById('balance-display').textContent = user.balance.toFixed(4);
   checkWithdraw();
-  showToast('💰 ' + earned.toFixed(4) + ' TON Collected!');
-  setTimeout(renderApp, 500);
+  showToast('💰 ' + earned.toFixed(4) + ' TON Collected! ⛏️ Mining restarted!');
+  renderMiningTimer();
 }
 
 // ===== REFERRAL =====
