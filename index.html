@@ -697,6 +697,23 @@
   @keyframes textShimmer { 0% { background-position: 200%; } 100% { background-position: -200%; } }
 
   .icon { display: inline-block; }
+
+  /* ANTI-CHEAT BADGE */
+  .blocked-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+  }
+  .blocked-icon { font-size: 60px; margin-bottom: 20px; }
+  .blocked-title { font-size: 22px; font-weight: 900; color: var(--red); margin-bottom: 12px; font-family: Orbitron, monospace; }
+  .blocked-msg { font-size: 14px; color: var(--muted); line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -715,8 +732,8 @@
       <div class="card" style="padding:24px">
         <h2 style="text-align:center; margin-bottom:20px; font-size:18px">Login</h2>
         <div class="input-group">
-          <label class="input-label">🪪 User ID</label>
-          <input type="number" class="input-field" id="login-id" placeholder="Enter your ID">
+          <label class="input-label">👛 TON Wallet (UQ)</label>
+          <input type="text" class="input-field" id="login-wallet" placeholder="UQ...">
         </div>
         <div class="input-group">
           <label class="input-label">🔒 Password</label>
@@ -1192,6 +1209,25 @@ function showAdminLogin() {
   document.getElementById('admin-login-form').style.display = 'block';
 }
 
+// Generate device fingerprint
+function getDeviceId() {
+  const nav = window.navigator;
+  const raw = [
+    nav.userAgent, nav.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    nav.hardwareConcurrency || '',
+    nav.platform || ''
+  ].join('|');
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'dev_' + Math.abs(hash).toString(36);
+}
+
 function doRegister() {
   const name = document.getElementById('reg-name').value.trim();
   const wallet = document.getElementById('reg-wallet').value.trim();
@@ -1200,7 +1236,31 @@ function doRegister() {
 
   if (!name) return showToast('Please enter your name');
   if (!wallet.startsWith('UQ')) return showToast('Wallet must start with UQ');
+  if (wallet.length < 30) return showToast('❌ Invalid wallet address');
   if (!pass || pass.length < 6) return showToast('Password must be 6 characters minimum');
+
+  // 🚫 Block duplicate wallet
+  const existingWallet = db.users.find(u => u.wallet === wallet);
+  if (existingWallet) {
+    showToast('❌ This wallet is already registered!');
+    setTimeout(() => {
+      showLogin();
+      document.getElementById('login-wallet').value = wallet;
+    }, 1500);
+    return;
+  }
+
+  // 🚫 Block duplicate device
+  const deviceId = getDeviceId();
+  const existingDevice = db.users.find(u => u.deviceId === deviceId);
+  if (existingDevice) {
+    showToast('❌ An account already exists on this device!');
+    setTimeout(() => {
+      showLogin();
+      document.getElementById('login-wallet').value = existingDevice.wallet;
+    }, 1500);
+    return;
+  }
 
   // Validate upline
   if (refId) {
@@ -1222,25 +1282,43 @@ function doRegister() {
     totalWithdrawn: 0,
     refCommission: 0,
     txHistory: [],
+    deviceId: deviceId,
     createdAt: Date.now()
   };
 
   db.users.push(newUser);
 
-  // Add to upline's referrals
+  // Add to upline referrals
   const upline = db.users.find(u => u.id === newUser.uplineId);
   if (upline) upline.referrals.push(newUser.id);
 
   saveDb();
-  showToast(`✅ Account created! ID: ${newUser.id}`);
+  showToast('✅ Account created! Welcome ' + newUser.name);
   setTimeout(() => { loginUser(newUser); }, 1000);
 }
 
+
 function doLogin() {
-  const id = parseInt(document.getElementById('login-id').value);
+  const wallet = document.getElementById('login-wallet').value.trim();
   const pass = document.getElementById('login-pass').value;
-  const user = db.users.find(u => u.id === id && u.password === pass);
-  if (!user) return showToast('❌ Incorrect login credentials');
+  if (!wallet) return showToast('❌ Please enter your wallet address');
+  if (!wallet.startsWith('UQ')) return showToast('❌ Wallet must start with UQ');
+  const user = db.users.find(u => u.wallet === wallet && u.password === pass);
+  if (!user) return showToast('❌ Incorrect wallet or password');
+
+  // Update device ID on login (allow legitimate re-login on new device)
+  const deviceId = getDeviceId();
+  const deviceOwner = db.users.find(u => u.deviceId === deviceId && u.wallet !== wallet);
+  if (deviceOwner) {
+    return showToast('❌ Another account is already linked to this device!');
+  }
+
+  // Update deviceId if not set
+  if (!user.deviceId) {
+    user.deviceId = deviceId;
+    saveDb();
+  }
+
   loginUser(user);
 }
 
