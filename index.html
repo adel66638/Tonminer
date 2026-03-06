@@ -905,7 +905,7 @@
         <div id="withdraw-section">
           <button class="btn btn-primary" id="withdraw-btn" onclick="openWithdraw()">💸 Withdraw</button>
           <div id="withdraw-warning" style="display:none; margin-top:10px; padding:10px; background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:8px; font-size:12px; color:var(--gold)">
-            ⚠️ You need <span id="refs-needed">5</span> referrals to withdraw. You currently have <span id="current-refs">0</span> referral(s).
+            ⚠️ Minimum withdraw is <strong>0.1 TON</strong>. Your current balance: <span id="current-balance-warn">0</span> TON.
           </div>
         </div>
       </div>
@@ -971,7 +971,7 @@
         <div class="section-title">💰 How do Referrals Work?</div>
         <div class="info-row">
           <span class="label">Level 1 (Free)</span>
-          <span class="value">5 referrals to withdraw</span>
+          <span class="value">Min. withdraw: 0.1 TON</span>
         </div>
         <div class="info-row">
           <span class="label">Levels 2-10</span>
@@ -1445,15 +1445,13 @@ function getLevelIcon(level) {
 
 function checkWithdraw() {
   const user = currentUser;
-  const lvl = LEVELS[user.level - 1];
   const withdrawBtn = document.getElementById('withdraw-btn');
   const warning = document.getElementById('withdraw-warning');
 
-  if (user.level === 1 && user.referrals.length < 5) {
+  if (user.balance < 0.1) {
     withdrawBtn.style.display = 'none';
     warning.style.display = 'block';
-    document.getElementById('refs-needed').textContent = 5;
-    document.getElementById('current-refs').textContent = user.referrals.length;
+    document.getElementById('current-balance-warn').textContent = user.balance.toFixed(4);
   } else {
     withdrawBtn.style.display = 'block';
     warning.style.display = 'none';
@@ -1687,23 +1685,66 @@ function confirmUpgrade() {
 }
 
 
+function openWithdraw() {
+  const user = db.users.find(u => u.id === currentUser.id);
+  document.getElementById('withdraw-modal-content').innerHTML = `
+    <div class="info-row">
+      <span class="label">Available Balance</span>
+      <span class="value ton" style="font-size:16px">${user.balance.toFixed(4)} TON</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Wallet</span>
+      <span class="value" style="font-size:11px; color:var(--muted); word-break:break-all">${user.wallet}</span>
+    </div>
+    <div style="margin:16px 0">
+      <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:8px">💰 Withdrawal Amount (TON)</label>
+      <input type="number" id="withdraw-amount" min="0.1" max="${user.balance.toFixed(4)}" step="0.0001"
+        placeholder="Min: 0.1 TON"
+        style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:10px;
+               color:var(--ton-light); font-family:'Orbitron',monospace; font-size:18px; font-weight:700;
+               text-align:center; padding:14px; outline:none; box-sizing:border-box;">
+      <div style="display:flex; gap:8px; margin-top:8px">
+        <button onclick="setWithdrawPct(0.25)" style="flex:1; background:rgba(0,136,204,0.15); border:1px solid var(--border); color:var(--ton-light); border-radius:8px; padding:8px; font-size:12px; cursor:pointer">25%</button>
+        <button onclick="setWithdrawPct(0.5)"  style="flex:1; background:rgba(0,136,204,0.15); border:1px solid var(--border); color:var(--ton-light); border-radius:8px; padding:8px; font-size:12px; cursor:pointer">50%</button>
+        <button onclick="setWithdrawPct(0.75)" style="flex:1; background:rgba(0,136,204,0.15); border:1px solid var(--border); color:var(--ton-light); border-radius:8px; padding:8px; font-size:12px; cursor:pointer">75%</button>
+        <button onclick="setWithdrawPct(1)"    style="flex:1; background:rgba(0,136,204,0.15); border:1px solid var(--border); color:var(--ton-light); border-radius:8px; padding:8px; font-size:12px; cursor:pointer; font-weight:700">MAX</button>
+      </div>
+    </div>
+    <div style="padding:10px; background:rgba(255,184,0,0.08); border-radius:8px; font-size:12px; color:var(--muted)">
+      ⚠️ Minimum withdrawal: <strong style="color:var(--gold)">0.1 TON</strong>
+    </div>
+  `;
+  openModal('withdraw-modal');
+}
+
+function setWithdrawPct(pct) {
+  const user = db.users.find(u => u.id === currentUser.id);
+  const amount = parseFloat((user.balance * pct).toFixed(4));
+  document.getElementById('withdraw-amount').value = amount;
+}
+
 function confirmWithdraw() {
   const user = db.users.find(u => u.id === currentUser.id);
-  if (user.balance <= 0) { showToast('No balance to withdraw'); return; }
+  const input = document.getElementById('withdraw-amount');
+  const amount = parseFloat(input ? input.value : user.balance);
+
+  if (!amount || isNaN(amount)) { showToast('❌ Please enter an amount'); return; }
+  if (amount < 0.1) { showToast('❌ Minimum withdrawal is 0.1 TON'); return; }
+  if (amount > user.balance) { showToast('❌ Insufficient balance'); return; }
 
   const withdrawal = {
     id: Date.now(),
     userId: user.id,
     userName: user.name,
     wallet: user.wallet,
-    amount: user.balance,
+    amount: amount,
     status: 'pending',
     date: Date.now()
   };
 
   db.withdrawals.push(withdrawal);
-  user.txHistory.unshift({ type: 'withdraw', amount: user.balance, date: Date.now(), desc: 'Withdrawal request Pending' });
-  user.balance = 0;
+  user.txHistory.unshift({ type: 'withdraw', amount: amount, date: Date.now(), desc: 'Withdrawal request Pending' });
+  user.balance = parseFloat((user.balance - amount).toFixed(4));
   saveDb();
   currentUser = user;
 
