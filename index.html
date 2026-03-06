@@ -807,18 +807,21 @@
         </div>
       </div>
 
-      <!-- TIMER -->
-      <div id="timer-wrap" style="display:none">
-        <div class="timer-display" id="countdown">48:00:00</div>
-        <div style="text-align:center; font-size:11px; color:var(--muted); margin-bottom:12px">⏱️ Time remaining to complete Mining</div>
-        <div class="progress-wrap">
-          <div class="progress-label">
-            <span>Progress</span>
-            <span id="progress-pct">0%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
-          </div>
+      <!-- MINING COUNTER -->
+      <div id="mining-counter-wrap" style="display:none; text-align:center; margin-bottom:16px">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:6px; letter-spacing:1px">⛏️ MINING IN PROGRESS</div>
+        <div style="display:flex; align-items:baseline; justify-content:center; gap:6px">
+          <div style="font-family:Orbitron,monospace; font-size:38px; font-weight:900; color:var(--green); text-shadow:0 0 20px rgba(0,230,118,0.5); transition:all 0.3s" id="live-ton-counter">0.0000</div>
+          <div style="font-size:16px; color:var(--muted); font-family:Orbitron,monospace">TON</div>
+        </div>
+        <div style="font-size:11px; color:var(--muted); margin-top:4px">
+          earning <span style="color:var(--green)" id="rate-per-sec">0.000000</span> TON/sec
+        </div>
+        <!-- hidden progress for background tracking -->
+        <div style="display:none">
+          <div id="progress-fill" style="width:0%"></div>
+          <span id="progress-pct">0%</span>
+          <div id="countdown">48:00:00</div>
         </div>
       </div>
 
@@ -1346,14 +1349,14 @@ function startMining() {
 function renderMiningTimer() {
   const user = currentUser;
   if (!user.miningStart) {
-    document.getElementById('timer-wrap').style.display = 'none';
+    document.getElementById('mining-counter-wrap').style.display = 'none';
     document.getElementById('orb-status').textContent = 'Start';
     document.getElementById('orb-sub').textContent = 'Mining';
     return;
   }
 
   const lvl = LEVELS[user.level - 1];
-  const total = lvl.interval * 3600 * 1000;
+  const total = lvl.interval * 3600 * 1000; // 48h in ms
   const elapsed = Date.now() - user.miningStart;
 
   if (elapsed >= total) {
@@ -1361,25 +1364,30 @@ function renderMiningTimer() {
     return;
   }
 
-  document.getElementById('timer-wrap').style.display = 'block';
+  document.getElementById('mining-counter-wrap').style.display = 'block';
   document.getElementById('orb-status').textContent = '⛏️';
   document.getElementById('orb-sub').textContent = 'Mining...';
+
+  // Rate per second
+  const ratePerMs = lvl.speed / total;
+  const ratePerSec = ratePerMs * 1000;
+  document.getElementById('rate-per-sec').textContent = ratePerSec.toFixed(6);
 
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     const now = Date.now();
     const e = now - user.miningStart;
     if (e >= total) { clearInterval(timerInterval); completeMining(); return; }
-    const remaining = total - e;
-    const h = Math.floor(remaining / 3600000);
-    const m = Math.floor((remaining % 3600000) / 60000);
-    const s = Math.floor((remaining % 60000) / 1000);
-    document.getElementById('countdown').textContent = 
-      `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+    // Live TON counter — shows earned so far
+    const earnedSoFar = ratePerMs * e;
+    document.getElementById('live-ton-counter').textContent = earnedSoFar.toFixed(6);
+
+    // Background progress tracking (hidden)
     const pct = Math.round((e / total) * 100);
     document.getElementById('progress-fill').style.width = pct + '%';
     document.getElementById('progress-pct').textContent = pct + '%';
-  }, 1000);
+  }, 100); // update every 100ms for smooth counter
 }
 
 function completeMining() {
@@ -1391,7 +1399,7 @@ function completeMining() {
   user.txHistory.unshift({ type: 'mine', amount: lvl.speed, date: Date.now(), desc: 'Mining Completed' });
   saveDb();
   currentUser = user;
-  document.getElementById('timer-wrap').style.display = 'none';
+  document.getElementById('mining-counter-wrap').style.display = 'none';
   document.getElementById('orb-status').textContent = '✅';
   document.getElementById('orb-sub').textContent = 'Completed!';
   document.getElementById('balance-display').textContent = user.balance.toFixed(4);
