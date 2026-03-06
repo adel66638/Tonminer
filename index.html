@@ -1191,16 +1191,16 @@ const LAUNCH_DATE = new Date('2026-03-06').getTime();
 
 const LEVELS = [
   { level: 0,  name: 'Free',         price: 0,  speed: 0.05, interval: 48 },
-  { level: 1,  name: 'Beginner',     price: 1,  speed: 0.1,  interval: 48 },
-  { level: 2,  name: 'Trainee',      price: 2,  speed: 0.3,  interval: 48 },
-  { level: 3,  name: 'Intermediate', price: 4,  speed: 0.6,  interval: 48 },
-  { level: 4,  name: 'Advanced',     price: 6,  speed: 1.0,  interval: 48 },
-  { level: 5,  name: 'Professional', price: 8,  speed: 2.0,  interval: 48 },
-  { level: 6,  name: 'Expert',       price: 10, speed: 4.0,  interval: 48 },
-  { level: 7,  name: 'Master',       price: 12, speed: 8.0,  interval: 48 },
-  { level: 8,  name: 'Elite',        price: 14, speed: 15,   interval: 48 },
-  { level: 9,  name: 'Legend',       price: 16, speed: 30,   interval: 48 },
-  { level: 10, name: 'Grand Master', price: 18, speed: 60,   interval: 48 },
+  { level: 1,  name: 'Beginner',     price: 0,  speed: 0.1,  interval: 48 },
+  { level: 2,  name: 'Trainee',      price: 1,  speed: 0.3,  interval: 48 },
+  { level: 3,  name: 'Intermediate', price: 2,  speed: 0.6,  interval: 48 },
+  { level: 4,  name: 'Advanced',     price: 4,  speed: 1.0,  interval: 48 },
+  { level: 5,  name: 'Professional', price: 6,  speed: 2.0,  interval: 48 },
+  { level: 6,  name: 'Expert',       price: 8,  speed: 4.0,  interval: 48 },
+  { level: 7,  name: 'Master',       price: 10, speed: 8.0,  interval: 48 },
+  { level: 8,  name: 'Elite',        price: 12, speed: 15,   interval: 48 },
+  { level: 9,  name: 'Legend',       price: 14, speed: 30,   interval: 48 },
+  { level: 10, name: 'Grand Master', price: 16, speed: 60,   interval: 48 },
 ];
 
 function getCommission(level) {
@@ -1584,48 +1584,76 @@ function renderWallet() {
 
 // ===== LEVELS =====
 function renderLevels() {
-  const user = currentUser;
-  document.getElementById('levels-badge').textContent = `${getLevelIcon(user.level)} Level ${user.level}`;
+  const user = db.users.find(u => u.id === currentUser.id);
+  document.getElementById('levels-badge').textContent = `${getLevelIcon(user.level)} Level ${user.level} — ${(LEVELS[user.level]||LEVELS[0]).name}`;
 
   const list = document.getElementById('levels-list');
   list.innerHTML = LEVELS.map(lvl => {
     const isCurrent = lvl.level === user.level;
-    const isLocked = lvl.level > user.level + 1;
-    const isNext = lvl.level === user.level + 1;
-    return `<div class="level-card ${isCurrent ? 'current' : ''} ${isLocked ? 'locked' : ''}">
+    const isOwned   = lvl.level < user.level;
+    const canBuy    = lvl.level > user.level && lvl.price > 0;
+
+    return `<div class="level-card ${isCurrent ? 'current' : ''}" style="margin-bottom:12px">
       <div class="level-card-header">
-        <div>
-          <span class="level-num">${getLevelIcon(lvl.level)} ${lvl.level}</span>
-          <span style="font-size:12px; color:var(--muted); margin-right:8px">${lvl.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:Orbitron,monospace;font-size:22px;font-weight:900;color:var(--ton-light)">${getLevelIcon(lvl.level)} ${lvl.level}</span>
+          <span style="font-size:13px;color:var(--muted)">${lvl.name}</span>
         </div>
-        ${isCurrent ? '<span class="status-badge status-active">Current</span>' : ''}
-        ${isNext ? `<span class="level-price">${lvl.price} TON</span>` : ''}
-        ${isLocked ? '<span style="font-size:12px; color:var(--muted)">🔒</span>' : ''}
-        ${lvl.level < user.level ? '<span class="status-badge status-done">✓ Completed</span>' : ''}
+        <div>
+          ${isCurrent ? '<span class="status-badge status-active">✦ Active</span>' : ''}
+          ${isOwned   ? '<span class="status-badge status-done">✓ Owned</span>' : ''}
+          ${lvl.price === 0 && !isCurrent && !isOwned ? '<span class="status-badge status-active">Free</span>' : ''}
+          ${canBuy    ? `<span style="color:var(--gold);font-family:Orbitron,monospace;font-size:13px;font-weight:700">${lvl.price} TON</span>` : ''}
+        </div>
       </div>
       <div class="level-details">
-        <div class="level-detail-item"><strong>${lvl.speed} TON</strong>every 48h</div>
-        <div class="level-detail-item"><strong>${lvl.withdrawReq > 0 ? lvl.withdrawReq + ' referrals' : 'No requirement'}</strong>to withdraw</div>
+        <div class="level-detail-item"><strong style="color:var(--green)">${lvl.speed} TON</strong><span>every 48h</span></div>
+        <div class="level-detail-item"><strong>From 0.1 TON</strong><span>to withdraw</span></div>
       </div>
-      ${isNext ? `<button class="btn btn-gold" style="margin-top:12px; padding:10px" onclick="openUpgradeModal()">⬆️ Upgrade to Level ${lvl.level}</button>` : ''}
+      ${canBuy ? `
+      <button class="btn btn-gold" style="margin-top:12px;padding:12px;font-size:14px"
+        onclick="openUpgradeModal(${lvl.level})">
+        ⬆️ Upgrade to Level ${lvl.level} — ${lvl.price} TON
+      </button>` : ''}
     </div>`;
   }).join('');
 }
 
-// ===== UPGRADE =====
-function openUpgradeModal() {
+
+function openUpgradeModal(targetLevel) {
   const user = currentUser;
-  if (user.level >= 10) return showToast('You are at the highest Level!');
-  const next = LEVELS[user.level];
+  if (user.level >= 10) return showToast('You are already at the highest level!');
+
+  // If no target, pick next level
+  const lvl = targetLevel !== undefined ? LEVELS[targetLevel] : LEVELS[user.level + 1];
+  if (!lvl || lvl.price === 0) return showToast('This level is free — no upgrade needed!');
+  if (lvl.level === user.level) return showToast('You are already at this level!');
+
   document.getElementById('upgrade-modal-content').innerHTML = `
-    <div class="info-row"><span class="label">Upgrading to</span><span class="value">Level ${next.level} - ${next.name}</span></div>
-    <div class="info-row"><span class="label">Amount Required</span><span class="value ton">${next.price} TON</span></div>
+    <input type="hidden" id="upgrade-target-level" value="${lvl.level}">
+    <div class="info-row">
+      <span class="label">Upgrading to</span>
+      <span class="value">${getLevelIcon(lvl.level)} Level ${lvl.level} — ${lvl.name}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Amount Required</span>
+      <span class="value ton" style="font-size:18px">${lvl.price} TON</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Mining Speed</span>
+      <span class="value" style="color:var(--green)">${lvl.speed} TON / 48h</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Referrer Commission</span>
+      <span class="value" style="color:var(--gold)">${getCommission(lvl.level)}% → ${(lvl.price * getCommission(lvl.level) / 100).toFixed(2)} TON</span>
+    </div>
     <div class="info-row"><span class="label">Project Wallet</span></div>
-    <div class="wallet-address" style="font-size:10px; cursor:pointer" onclick="navigator.clipboard.writeText('${PROJECT_WALLET}').then(()=>showToast('✅ Copied!'))">
+    <div class="wallet-address" style="font-size:10px; cursor:pointer"
+         onclick="navigator.clipboard.writeText('${PROJECT_WALLET}').then(()=>showToast('✅ Copied!'))">
       ${PROJECT_WALLET}
     </div>
     <div style="padding:12px; background:rgba(255,184,0,0.1); border-radius:10px; font-size:12px; color:var(--muted); margin:12px 0">
-      ⚠️ Send <strong style="color:var(--gold)">${next.price} TON</strong> to the wallet above, then press "I Confirm Sending".<br><br>
+      ⚠️ Send <strong style="color:var(--gold)">${lvl.price} TON</strong> to the wallet above, then press "I Confirm Sending".<br><br>
       ✅ The transaction will be manually verified and the upgrade activated within 24 hours.
     </div>
   `;
@@ -1634,43 +1662,30 @@ function openUpgradeModal() {
 
 function confirmUpgrade() {
   const user = db.users.find(u => u.id === currentUser.id);
-  const next = LEVELS[user.level];
+  const targetLv = parseInt(document.getElementById('upgrade-target-level').value);
+  const lvl = LEVELS[targetLv];
+  if (!lvl) return showToast('Invalid level');
 
-  // Create payout record for admin
-  const commPct = getCommission(next.level);
+  const commPct = getCommission(lvl.level);
   const payout = {
     id: Date.now(),
     userId: user.id,
     userName: user.name,
     uplineId: user.uplineId,
-    upgradeLevel: next.level,
-    upgradePrice: next.price,
+    upgradeLevel: lvl.level,
+    upgradePrice: lvl.price,
     commissionPct: commPct,
-    uplineAmount: parseFloat((next.price * commPct / 100).toFixed(4)),
+    uplineAmount: parseFloat((lvl.price * commPct / 100).toFixed(4)),
     status: 'pending',
     date: Date.now()
   };
 
   db.payouts.push(payout);
   saveDb();
-
   closeModal('upgrade-modal');
   showToast('✅ Upgrade request sent! Will be activated within 24 hours');
 }
 
-// ===== WITHDRAW =====
-function openWithdraw() {
-  const user = currentUser;
-  document.getElementById('withdraw-modal-content').innerHTML = `
-    <div class="info-row"><span class="label">Available Balance</span><span class="value ton">${user.balance.toFixed(4)} TON</span></div>
-    <div class="info-row"><span class="label">Receiving Wallet</span></div>
-    <div class="wallet-address" style="font-size:11px">${user.wallet}</div>
-    <div style="padding:12px; background:rgba(0,136,204,0.1); border-radius:10px; font-size:12px; color:var(--muted); margin:12px 0">
-      Your withdrawal request will be manually reviewed and sent to your wallet within 24-48 hours.
-    </div>
-  `;
-  document.getElementById('withdraw-modal').classList.add('open');
-}
 
 function confirmWithdraw() {
   const user = db.users.find(u => u.id === currentUser.id);
