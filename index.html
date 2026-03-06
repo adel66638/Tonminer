@@ -882,6 +882,21 @@
         </div>
       </div>
 
+      <!-- COLLECT + WITHDRAW BUTTONS -->
+      <div style="display:flex; gap:10px; margin-bottom:16px">
+        <button class="btn" id="collect-btn" onclick="collectNow()"
+          style="flex:1; background:linear-gradient(135deg,#00C853,#00E676); color:#003300; font-weight:900; font-size:14px; padding:14px; border-radius:12px">
+          💰 Collect
+        </button>
+        <button class="btn btn-primary" id="withdraw-btn" onclick="openWithdraw()"
+          style="flex:1; font-size:14px; padding:14px; border-radius:12px">
+          💸 Withdraw
+        </button>
+      </div>
+      <div id="withdraw-warning" style="display:none; margin-bottom:12px; padding:10px; background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:8px; font-size:12px; color:var(--gold); text-align:center">
+        ⚠️ Minimum withdraw is <strong>0.1 TON</strong> — Balance: <span id="current-balance-warn">0</span> TON
+      </div>
+
       <!-- BALANCE -->
       <div class="card">
         <div style="text-align:center; margin-bottom:16px">
@@ -901,29 +916,7 @@
           </div>
         </div>
 
-        <!-- COLLECT + WITHDRAW -->
-        <div id="withdraw-section">
 
-          <!-- زر جمع الأرباح - يظهر دائماً أثناء التعدين -->
-          <div id="collect-section" style="margin-bottom:12px">
-            <div id="collect-earned-wrap" style="display:none; text-align:center; margin-bottom:8px; padding:10px; background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.25); border-radius:10px">
-              <div style="font-size:11px; color:var(--muted); margin-bottom:4px">⛏️ Earned so far</div>
-              <div style="font-family:'Orbitron',monospace; font-size:20px; font-weight:900; color:var(--green)">+<span id="collect-amount">0.000000</span> TON</div>
-            </div>
-            <button class="btn" id="collect-btn" onclick="collectNow()" style="background:linear-gradient(135deg,#00C853,#00E676); color:#003300; font-weight:900; font-size:15px; padding:13px; margin-bottom:10px">
-              💰 Collect Earnings
-            </button>
-          </div>
-
-          <!-- زر السحب -->
-          <button class="btn btn-primary" id="withdraw-btn" onclick="openWithdraw()" style="font-size:15px; letter-spacing:1px">
-            💸 Withdraw TON
-          </button>
-          <div id="withdraw-warning" style="display:none; margin-top:10px; padding:10px; background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:8px; font-size:12px; color:var(--gold); text-align:center">
-            ⚠️ Minimum withdraw is <strong>0.1 TON</strong><br>
-            <span style="font-size:11px; color:var(--muted)">Balance: <span id="current-balance-warn">0</span> TON</span>
-          </div>
-        </div>
       </div>
 
       <!-- UPGRADE -->
