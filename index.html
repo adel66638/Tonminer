@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TonNeed - ofصة Mining</title>
+<title>TonNeed - Mining Platform</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&display=swap');
 
@@ -870,7 +870,7 @@
           <span class="value" style="font-size:10px; color:var(--muted)">UQA-TmMK...V3pi2</span>
         </div>
         <div style="margin-top:12px; padding:10px; background:rgba(255,184,0,0.08); border-radius:8px; font-size:12px; color:var(--muted); margin-bottom:12px">
-          Send amount Upgrading to Project Wallet ثم press "confirm the upgrade"
+          Send the upgrade amount to the project wallet, then press "Upgrade Now"
         </div>
         <button class="btn btn-gold" onclick="openUpgradeModal()">⬆️ Upgrade Now</button>
       </div>
@@ -985,7 +985,7 @@
     </button>
     <button class="nav-btn" onclick="switchTab('referral', this)">
       <span class="nav-icon">👥</span>
-      <span>الreferrals</span>
+      <span>Referrals</span>
     </button>
     <button class="nav-btn" onclick="switchTab('wallet', this)">
       <span class="nav-icon">💰</span>
@@ -1023,8 +1023,8 @@
 
     <!-- COMMISSION SETTINGS -->
     <div class="card" style="border-color:rgba(255,184,0,0.4)">
-      <div class="section-title" style="color:var(--gold)">⚙️ Rates Commission Referrer لevery Level</div>
-      <div style="font-size:12px; color:var(--muted); margin-bottom:14px">Set the percentage % sent to referrer when upgrading أي Users who invited them</div>
+      <div class="section-title" style="color:var(--gold)">⚙️ Referral Commission Per Level</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:14px">Set the % commission sent to the referrer when an invited user upgrades</div>
       <div id="commissions-settings-list"></div>
       <button class="btn btn-gold" style="margin-top:4px" onclick="saveCommissions()">💾 Save Settings</button>
     </div>
@@ -1033,13 +1033,13 @@
     <div class="card">
       <div class="section-title">💸 Referral Commission Payouts</div>
       <div id="admin-payouts-list">
-        <div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">لا pending payouts Pendingة</div>
+        <div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">No pending payouts</div>
       </div>
     </div>
 
     <!-- ALL USERS -->
     <div class="card">
-      <div class="section-title">👥 All الUsersين</div>
+      <div class="section-title">👥 All Users</div>
       <input type="text" class="search-input" id="admin-search" placeholder="🔍 Search by name, ID or wallet..." oninput="renderAdminUsers()">
       <div id="admin-users-list"></div>
     </div>
@@ -1083,7 +1083,7 @@
 <!-- USER TREE MODAL -->
 <div class="modal-overlay" id="tree-modal">
   <div class="modal">
-    <div class="modal-title" id="tree-modal-title">Tree الreferrals</div>
+    <div class="modal-title" id="tree-modal-title">Tree Referrals</div>
     <div id="tree-modal-content" style="max-height:60vh; overflow-y:auto"></div>
     <button class="btn btn-outline" onclick="closeModal('tree-modal')" style="margin-top:12px">Close</button>
   </div>
@@ -1094,17 +1094,9 @@
 
 <script>
 // ===== DATA STORE =====
-// Rates الCommission default لevery Level Upgrade (editable from admin)
+// Default commission rates per level (editable from admin panel)
 const DEFAULT_COMMISSIONS = {
-  2: 30,   // Upgrade لLevel 2 → 30% to Referrer
-  3: 30,
-  4: 25,
-  5: 25,
-  6: 20,
-  7: 20,
-  8: 15,
-  9: 15,
-  10: 10,
+  2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 10, 9: 10, 10: 10
 };
 
 let db = JSON.parse(localStorage.getItem('tonneed_db') || JSON.stringify({
@@ -1130,7 +1122,7 @@ let db = JSON.parse(localStorage.getItem('tonneed_db') || JSON.stringify({
   commissions: { ...DEFAULT_COMMISSIONS }
 }));
 
-// Ensure commissions exist in old DB
+// Ensure commissions exist in older DB versions
 if (!db.commissions) db.commissions = { ...DEFAULT_COMMISSIONS };
 
 const ADMIN_PASS = 'TonNeed@Admin2024';
@@ -1237,7 +1229,7 @@ function doRegister() {
   if (upline) upline.referrals.push(newUser.id);
 
   saveDb();
-  showToast(`✅ تم Create Accountك! ID: ${newUser.id}`);
+  showToast(`✅ Account created! ID: ${newUser.id}`);
   setTimeout(() => { loginUser(newUser); }, 1000);
 }
 
@@ -1426,7 +1418,7 @@ function renderReferral() {
         <div class="ref-avatar">${ref.name.charAt(0)}</div>
         <div>
           <div class="ref-name">${ref.name}</div>
-          <div class="ref-meta">ID: ${ref.id} • ${new Date(ref.createdAt).toLocaleDateString('ar')}</div>
+          <div class="ref-meta">ID: ${ref.id} • ${new Date(ref.createdAt).toLocaleDateString('en')}</div>
         </div>
       </div>
       <div class="ref-level-badge">Lv${ref.level}</div>
@@ -1450,7 +1442,7 @@ function renderWallet() {
   }
   txList.innerHTML = user.txHistory.slice(0, 20).map(tx => `
     <div class="info-row">
-      <span class="label">${tx.desc}<br><span style="font-size:10px">${new Date(tx.date).toLocaleDateString('ar')}</span></span>
+      <span class="label">${tx.desc}<br><span style="font-size:10px">${new Date(tx.date).toLocaleDateString('en')}</span></span>
       <span class="value" style="color:${tx.type === 'withdraw' ? 'var(--red)' : 'var(--green)'}">
         ${tx.type === 'withdraw' ? '-' : '+'}${tx.amount.toFixed(4)} TON
       </span>
@@ -1622,7 +1614,7 @@ function renderAdminPayouts() {
   const pending = db.payouts.filter(p => p.status === 'pending');
   const list = document.getElementById('admin-payouts-list');
   if (!pending.length) {
-    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">لا pending payouts Pendingة</div>';
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">No pending payouts</div>';
     return;
   }
   list.innerHTML = pending.map(p => {
@@ -1702,7 +1694,7 @@ function renderAdminUsers() {
 
   const list = document.getElementById('admin-users-list');
   list.innerHTML = `<table class="admin-table" style="margin-top:8px">
-    <thead><tr><th>ID</th><th>Name</th><th>الLevel</th><th>Balance</th><th>Tree</th></tr></thead>
+    <thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Balance</th><th>Tree</th></tr></thead>
     <tbody>
       ${filtered.slice(0, 30).map(u => `
         <tr>
@@ -1757,7 +1749,7 @@ function renderAdminWithdrawals() {
       <div style="display:flex; justify-content:space-between; width:100%">
         <div>
           <div style="font-size:13px; font-weight:700">${w.userName}</div>
-          <div style="font-size:11px; color:var(--muted)">${new Date(w.date).toLocaleDateString('ar')}</div>
+          <div style="font-size:11px; color:var(--muted)">${new Date(w.date).toLocaleDateString('en')}</div>
         </div>
         <span class="status-badge ${w.status === 'pending' ? 'status-pending' : 'status-done'}">${w.status === 'pending' ? 'Pending' : 'Completed'}</span>
       </div>
@@ -1796,7 +1788,7 @@ function rejectWithdrawal(wId) {
     db.withdrawals = db.withdrawals.filter(x => x.id !== wId);
     saveDb();
     renderAdminWithdrawals();
-    showToast('❌ تم Reject Request الWithdrawal and balance returned Balance');
+    showToast('❌ Done Withdrawal rejected and balance refunded');
   }
 }
 
