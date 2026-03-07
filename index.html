@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
 <title>TonNeed - Mining Platform</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&display=swap');
@@ -191,6 +192,10 @@
     position: relative;
     transition: transform 0.2s;
     animation: orbPulse 3s ease-in-out infinite;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .mining-orb:active { transform: scale(0.95); }
@@ -834,7 +839,7 @@
       <!-- MINING ORB -->
       <div class="mining-orb-wrap">
         <div class="orb-ring-2"></div>
-        <div class="mining-orb" id="miningOrb" onclick="startMining()">
+        <div class="mining-orb" id="miningOrb">
           <div class="orb-ring"></div>
           <div class="orb-text">
             <div>⛏️</div>
@@ -1229,20 +1234,27 @@ function loadDb(callback) {
 
 // ===== TELEGRAM WEBAPP =====
 const tgWebApp = window.Telegram && window.Telegram.WebApp;
-if (tgWebApp) tgWebApp.expand();
+if (tgWebApp) {
+  tgWebApp.ready();
+  tgWebApp.expand();
+}
 
 function getTelegramUserId() {
-  if (tgWebApp && tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
-    return 'tg_' + tgWebApp.initDataUnsafe.user.id;
-  }
+  try {
+    if (tgWebApp && tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
+      return 'tg_' + tgWebApp.initDataUnsafe.user.id;
+    }
+  } catch(e) {}
   return null;
 }
 
 function getTelegramUserName() {
-  if (tgWebApp && tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
-    const u = tgWebApp.initDataUnsafe.user;
-    return u.first_name + (u.last_name ? ' ' + u.last_name : '');
-  }
+  try {
+    if (tgWebApp && tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
+      const u = tgWebApp.initDataUnsafe.user;
+      return u.first_name + (u.last_name ? ' ' + u.last_name : '');
+    }
+  } catch(e) {}
   return null;
 }
 
@@ -1251,8 +1263,11 @@ const TG_TOKEN = '8098144295:AAEMYi2AIq3x4tO5BTf5QOtfD2L5YmGIS_0';
 const TG_CHAT = '7871311618';
 
 function sendTelegram(msg) {
-  const url = `https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT}&text=${encodeURIComponent(msg)}&parse_mode=HTML`;
-  fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: TG_CHAT, text: msg, parse_mode: 'HTML' })
+  }).catch(() => {});
 }
 
 // ===== DATA STORE =====
@@ -1355,21 +1370,29 @@ function showAdminLogin() {
 
 // Generate device fingerprint
 function getDeviceId() {
-  const nav = window.navigator;
-  const raw = [
-    nav.userAgent, nav.language,
-    screen.width + 'x' + screen.height,
-    screen.colorDepth,
-    new Date().getTimezoneOffset(),
-    nav.hardwareConcurrency || '',
-    nav.platform || ''
-  ].join('|');
-  let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
-    hash |= 0;
+  try {
+    const nav = window.navigator;
+    const raw = [
+      nav.userAgent || '',
+      nav.language || '',
+      (screen && screen.width ? screen.width + 'x' + screen.height : '0x0'),
+      (screen && screen.colorDepth ? screen.colorDepth : ''),
+      new Date().getTimezoneOffset(),
+      nav.hardwareConcurrency || '',
+      nav.platform || ''
+    ].join('|');
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+      hash |= 0;
+    }
+    // Use Telegram user ID as part of device ID if available
+    const tgId = getTelegramUserId();
+    if (tgId) return 'dev_tg_' + tgId;
+    return 'dev_' + Math.abs(hash).toString(36);
+  } catch(e) {
+    return 'dev_' + Date.now().toString(36);
   }
-  return 'dev_' + Math.abs(hash).toString(36);
 }
 
 function doRegister() {
@@ -2262,6 +2285,16 @@ function showToast(msg) {
 
 // Check ref in URL
 window.addEventListener('load', () => {
+  // ربط زر التعدين بـ addEventListener بدلاً من onclick
+  const orbEl = document.getElementById('miningOrb');
+  if (orbEl) {
+    orbEl.addEventListener('click', startMining);
+    orbEl.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      startMining();
+    }, { passive: false });
+  }
+
   // مسح البيانات القديمة من localStorage
   localStorage.removeItem('tonneed_db');
   loadDb(() => {
