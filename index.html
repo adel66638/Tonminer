@@ -720,6 +720,9 @@
   .blocked-title { font-size: 22px; font-weight: 900; color: var(--red); margin-bottom: 12px; font-family: Orbitron, monospace; }
   .blocked-msg { font-size: 14px; color: var(--muted); line-height: 1.6; }
 </style>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -784,10 +787,6 @@
     <div id="admin-login-form" style="width:100%; display:none">
       <div class="card" style="padding:24px; border-color: var(--gold)">
         <h2 style="text-align:center; margin-bottom:20px; font-size:18px; color:var(--gold)">🔐 Admin Panel</h2>
-        <div class="input-group">
-          <label class="input-label">Admin Password</label>
-          <input type="password" class="input-field" id="admin-pass" placeholder="Password Admin">
-        </div>
         <button class="btn btn-gold" style="margin-top:8px" onclick="doAdminLogin()">Enter Admin Panel</button>
       </div>
       <div class="auth-switch"><a onclick="showLogin()">← Back</a></div>
@@ -1135,8 +1134,12 @@
 
     <!-- ALL USERS -->
     <div class="card">
-      <div class="section-title">👥 All Users</div>
-      <input type="text" class="search-input" id="admin-search" placeholder="🔍 Search by name, ID or wallet..." oninput="renderAdminUsers()">
+      <div class="section-title">👥 All Users <span id="admin-users-count" style="font-size:12px; color:var(--muted); font-weight:400"></span></div>
+      <div style="display:flex; gap:8px; margin-bottom:10px">
+        <input type="number" class="search-input" id="admin-search-id" placeholder="🔍 ابحث بالـ ID..." oninput="renderAdminUsers()"
+          style="flex:1; background:rgba(0,136,204,0.08); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:10px; font-size:13px; outline:none">
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('admin-search-id').value=''; renderAdminUsers()" style="padding:8px 14px; font-size:12px">✕</button>
+      </div>
       <div id="admin-users-list"></div>
     </div>
 
@@ -1189,6 +1192,51 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyAsNRuN09FLendzP60yBaiw7hV3Toex0D0",
+  authDomain: "tonminer-87923.firebaseapp.com",
+  databaseURL: "https://tonminer-87923-default-rtdb.firebaseio.com",
+  projectId: "tonminer-87923",
+  storageBucket: "tonminer-87923.firebasestorage.app",
+  messagingSenderId: "736875130208",
+  appId: "1:736875130208:web:5741503e947609f09bc205"
+};
+firebase.initializeApp(firebaseConfig);
+const firebaseDb = firebase.database();
+
+function saveDb() {
+  firebaseDb.ref('tonneed').set(db);
+  localStorage.setItem('tonneed_db', JSON.stringify(db));
+}
+
+function loadDb(callback) {
+  firebaseDb.ref('tonneed').once('value').then(snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      db = data;
+      // Ensure commissions exist
+      if (!db.commissions) db.commissions = { ...DEFAULT_COMMISSIONS };
+    }
+    callback();
+  }).catch(() => {
+    // fallback to localStorage
+    callback();
+  });
+}
+
+// ===== TELEGRAM NOTIFICATIONS =====
+const TG_TOKEN = '8098144295:AAEMYi2AIq3x4tO5BTf5QOtfD2L5YmGIS_0';
+const TG_CHAT = '7871311618';
+
+function sendTelegram(msg) {
+  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: TG_CHAT, text: msg, parse_mode: 'HTML' })
+  }).catch(() => {});
+}
+
 // ===== DATA STORE =====
 // Default commission rates per level (editable from admin panel)
 const DEFAULT_COMMISSIONS = {
@@ -1223,7 +1271,7 @@ if (!db.commissions) db.commissions = { ...DEFAULT_COMMISSIONS };
 
 const ADMIN_PASS = 'TonNeed@Admin2024';
 const PROJECT_WALLET = 'UQA-TmMKLnasH4aP1TG114M6Qqbz38DFs_5zkKU4vaoV3pi2';
-const LAUNCH_DATE = new Date('2026-03-06').getTime();
+const LAUNCH_DATE = new Date('2026-03-07').getTime();
 
 const LEVELS = [
   { level: 0,  name: 'Free',         price: 0,  speed: 0.05, interval: 48 },
@@ -1243,7 +1291,7 @@ function getCommission(level) {
   return db.commissions[level] ?? 0;
 }
 
-function saveDb() { localStorage.setItem('tonneed_db', JSON.stringify(db)); }
+// saveDb defined above
 
 let currentUser = null;
 let timerInterval = null;
@@ -1371,6 +1419,11 @@ function doRegister() {
   if (upline) upline.referrals.push(newUser.id);
 
   saveDb();
+  sendTelegram(`🆕 <b>مستخدم جديد!</b>
+👤 الاسم: ${newUser.name}
+🆔 ID: ${newUser.id}
+👛 المحفظة: ${newUser.wallet}
+📅 التاريخ: ${new Date().toLocaleString('ar')}`);
   showToast('✅ Account created! Welcome ' + newUser.name);
   setTimeout(() => { loginUser(newUser); }, 1000);
 }
@@ -1401,8 +1454,6 @@ function doLogin() {
 }
 
 function doAdminLogin() {
-  const pass = document.getElementById('admin-pass').value;
-  if (pass !== ADMIN_PASS) return showToast('❌ Incorrect password');
   showScreen('admin');
   renderAdminPanel();
 }
@@ -1796,6 +1847,12 @@ function confirmUpgrade() {
 
   db.payouts.push(payout);
   saveDb();
+  sendTelegram(`⬆️ <b>طلب ترقية!</b>
+👤 الاسم: ${user.name}
+🆔 ID: ${user.id}
+📊 المستوى: ${lvl.level} — ${lvl.name}
+💰 المبلغ: ${lvl.price} TON
+👛 المحفظة: ${user.wallet}`);
   closeModal('upgrade-modal');
   showToast('✅ Upgrade request sent! Will be activated within 24 hours');
 }
@@ -1869,6 +1926,12 @@ function confirmWithdraw() {
 
   db.withdrawals.push(withdrawal);
   saveDb();
+  sendTelegram(`💸 <b>طلب سحب!</b>
+👤 الاسم: ${user.name}
+🆔 ID: ${user.id}
+💰 المبلغ: ${amount.toFixed(4)} TON
+👛 المحفظة: ${user.wallet}
+📅 التاريخ: ${new Date().toLocaleString('ar')}`);
   currentUser = user;
 
   closeModal('withdraw-modal');
@@ -1997,28 +2060,49 @@ function activateUpgrade(payoutId) {
 }
 
 function renderAdminUsers() {
-  const q = document.getElementById('admin-search').value.toLowerCase();
-  const filtered = db.users.filter(u =>
-    u.name.toLowerCase().includes(q) ||
-    String(u.id).includes(q) ||
-    u.wallet.toLowerCase().includes(q)
-  );
+  const q = (document.getElementById('admin-search-id').value || '').trim();
+  const filtered = q
+    ? db.users.filter(u => String(u.id).includes(q))
+    : db.users;
+
+  const countEl = document.getElementById('admin-users-count');
+  if (countEl) countEl.textContent = '(' + filtered.length + ')';
 
   const list = document.getElementById('admin-users-list');
-  list.innerHTML = `<table class="admin-table" style="margin-top:8px">
-    <thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Balance</th><th>Tree</th></tr></thead>
-    <tbody>
-      ${filtered.slice(0, 30).map(u => `
-        <tr>
-          <td style="font-family:Orbitron,monospace; font-size:11px; color:var(--ton-light)">${u.id}</td>
-          <td>${u.name}</td>
-          <td><span class="ref-level-badge">Lv${u.level}</span></td>
-          <td style="color:var(--ton-light); font-family:Orbitron,monospace; font-size:11px">${u.balance.toFixed(2)}</td>
-          <td><button class="btn btn-sm btn-outline" onclick="showUserTree(${u.id})" style="padding:4px 8px; font-size:10px">🌳</button></td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>`;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">❌ No user found with this ID</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(u => `
+    <div style="background:rgba(0,136,204,0.06); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <div style="font-family:'Orbitron',monospace; font-size:16px; font-weight:900; color:var(--ton-light)">ID: ${u.id}</div>
+        <span class="ref-level-badge" style="font-size:12px; padding:4px 12px">${getLevelIcon(u.level)} Lv${u.level} — ${(LEVELS[u.level-1]||LEVELS[0]).name}</span>
+      </div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:6px">👤 ${u.name}</div>
+      <div style="font-size:10px; font-family:'Orbitron',monospace; color:var(--ton-light); background:rgba(0,0,0,0.3); border-radius:8px; padding:8px; word-break:break-all; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px">
+        <span style="flex:1">👛 ${u.wallet}</span>
+        <button class="copy-btn" style="font-size:10px; padding:4px 8px; flex-shrink:0" onclick="navigator.clipboard.writeText('${u.wallet.replace(/'/g,"\'")}').then(()=>showToast('✅ Copied!'))">Copy</button>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px">
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">Balance</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--green); font-weight:700">${u.balance.toFixed(4)}</div>
+        </div>
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">Referrals</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--gold); font-weight:700">${u.referrals.length}</div>
+        </div>
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">Withdrawn</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--ton-light); font-weight:700">${(u.totalWithdrawn||0).toFixed(4)}</div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="showUserTree(${u.id})" style="width:100%; font-size:12px">🌳 View Tree</button>
+    </div>
+  `).join('');
 }
 
 function showUserTree(userId) {
@@ -2134,13 +2218,21 @@ function showToast(msg) {
 
 // Check ref in URL
 window.addEventListener('load', () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const ref = urlParams.get('ref');
-  if (ref) {
-    showRegister();
-    document.getElementById('reg-ref').value = ref;
-    showToast('🔗 Redirected via referral link');
-  }
+  loadDb(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    const admin = urlParams.get('admin');
+    if (admin === 'true') {
+      showScreen('admin');
+      renderAdminPanel();
+      return;
+    }
+    if (ref) {
+      showRegister();
+      document.getElementById('reg-ref').value = ref;
+      showToast('🔗 Redirected via referral link');
+    }
+  });
 });
 </script>
 </body>
