@@ -720,6 +720,8 @@
   .blocked-title { font-size: 22px; font-weight: 900; color: var(--red); margin-bottom: 12px; font-family: Orbitron, monospace; }
   .blocked-msg { font-size: 14px; color: var(--muted); line-height: 1.6; }
 </style>
+<!-- Telegram WebApp -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -1225,6 +1227,25 @@ function loadDb(callback) {
   });
 }
 
+// ===== TELEGRAM WEBAPP =====
+const tgWebApp = window.Telegram && window.Telegram.WebApp;
+if (tgWebApp) tgWebApp.expand();
+
+function getTelegramUserId() {
+  if (tgWebApp && tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
+    return 'tg_' + tgWebApp.initDataUnsafe.user.id;
+  }
+  return null;
+}
+
+function getTelegramUserName() {
+  if (tgWebApp && tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
+    const u = tgWebApp.initDataUnsafe.user;
+    return u.first_name + (u.last_name ? ' ' + u.last_name : '');
+  }
+  return null;
+}
+
 // ===== TELEGRAM NOTIFICATIONS =====
 const TG_TOKEN = '8098144295:AAEMYi2AIq3x4tO5BTf5QOtfD2L5YmGIS_0';
 const TG_CHAT = '7871311618';
@@ -1376,6 +1397,20 @@ function doRegister() {
     return;
   }
 
+  // 🚫 Block duplicate Telegram account
+  const tgId = getTelegramUserId();
+  if (tgId) {
+    const existingTg = db.users.find(u => u.telegramId === tgId);
+    if (existingTg) {
+      showToast('❌ حساب Telegram هذا مسجل مسبقاً!');
+      setTimeout(() => {
+        showLogin();
+        document.getElementById('login-wallet').value = existingTg.wallet;
+      }, 1500);
+      return;
+    }
+  }
+
   // 🚫 Block duplicate device
   const deviceId = getDeviceId();
   const existingDevice = db.users.find(u => u.deviceId === deviceId);
@@ -1396,7 +1431,7 @@ function doRegister() {
 
   const newUser = {
     id: db.nextId++,
-    name,
+    name: getTelegramUserName() || name,
     wallet,
     password: pass,
     level: 1,
@@ -1409,6 +1444,7 @@ function doRegister() {
     refCommission: 0,
     txHistory: [],
     deviceId: deviceId,
+    telegramId: getTelegramUserId() || null,
     createdAt: Date.now()
   };
 
@@ -1436,6 +1472,17 @@ function doLogin() {
   if (!wallet.startsWith('UQ')) return showToast('❌ Wallet must start with UQ');
   const user = db.users.find(u => u.wallet === wallet && u.password === pass);
   if (!user) return showToast('❌ Incorrect wallet or password');
+
+  // 🚫 Block duplicate Telegram on login
+  const tgId = getTelegramUserId();
+  if (tgId && user.telegramId && user.telegramId !== tgId) {
+    return showToast('❌ هذا الحساب مرتبط بحساب Telegram آخر!');
+  }
+  // Save telegramId if not set
+  if (tgId && !user.telegramId) {
+    user.telegramId = tgId;
+    saveDb();
+  }
 
   // Update device ID on login (allow legitimate re-login on new device)
   const deviceId = getDeviceId();
@@ -2218,6 +2265,8 @@ function showToast(msg) {
 
 // Check ref in URL
 window.addEventListener('load', () => {
+  // مسح البيانات القديمة من localStorage
+  localStorage.removeItem('tonneed_db');
   loadDb(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const ref = urlParams.get('ref');
