@@ -1531,13 +1531,39 @@ function doAdminLogin() {
 
 function loginUser(user) {
   currentUser = user;
-  // ✅ إذا لم يكن التعدين شغالاً، ابدأه تلقائياً عند الدخول
   const dbUser = db.users.find(u => u.id === user.id);
-  if (dbUser && !dbUser.miningStart) {
-    dbUser.miningStart = Date.now();
-    saveDb();
+
+  if (dbUser) {
+    const lvl = LEVELS[dbUser.level - 1];
+    const total = lvl.interval * 3600 * 1000;
+
+    if (!dbUser.miningStart) {
+      // لم يبدأ التعدين أبداً — ابدأه الآن
+      dbUser.miningStart = Date.now();
+      saveDb();
+    } else {
+      // حساب كم دورة انتهت أثناء الغياب
+      const elapsed = Date.now() - dbUser.miningStart;
+      if (elapsed >= total) {
+        const cyclesCompleted = Math.floor(elapsed / total);
+        const earned = cyclesCompleted * lvl.speed;
+        dbUser.balance = parseFloat((dbUser.balance + earned).toFixed(4));
+        dbUser.totalEarned = (dbUser.totalEarned || 0) + earned;
+        dbUser.txHistory.unshift({
+          type: 'mine',
+          amount: earned,
+          date: Date.now(),
+          desc: `Mining x${cyclesCompleted} cycles (offline)`
+        });
+        // ابدأ دورة جديدة من وقت انتهاء آخر دورة
+        dbUser.miningStart = dbUser.miningStart + (cyclesCompleted * total);
+        saveDb();
+        setTimeout(() => showToast(`🎉 Offline mining: +${earned.toFixed(4)} TON!`), 1500);
+      }
+    }
     currentUser = dbUser;
   }
+
   showScreen('app');
   renderApp();
   showTab('home');
