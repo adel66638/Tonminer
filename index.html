@@ -1308,20 +1308,20 @@ if (!db.commissions) db.commissions = { ...DEFAULT_COMMISSIONS };
 
 const ADMIN_PASS = 'TonNeed@Admin2024';
 const PROJECT_WALLET = 'UQA-TmMKLnasH4aP1TG114M6Qqbz38DFs_5zkKU4vaoV3pi2';
-const LAUNCH_DATE = new Date('2026-03-07').getTime();
+const LAUNCH_DATE = new Date('2026-03-08').getTime();
 
 const LEVELS = [
-  { level: 0,  name: 'Free',         price: 0,  speed: 0.05, interval: 48 },
-  { level: 1,  name: 'Beginner',     price: 0,  speed: 0.1,  interval: 48 },
-  { level: 2,  name: 'Trainee',      price: 1,  speed: 0.5,  interval: 48 },
-  { level: 3,  name: 'Intermediate', price: 2,  speed: 1.0,  interval: 48 },
-  { level: 4,  name: 'Advanced',     price: 4,  speed: 2.0,  interval: 48 },
-  { level: 5,  name: 'Professional', price: 6,  speed: 3.0,  interval: 48 },
-  { level: 6,  name: 'Expert',       price: 8,  speed: 4.0,  interval: 48 },
-  { level: 7,  name: 'Master',       price: 10, speed: 5.0,  interval: 48 },
-  { level: 8,  name: 'Elite',        price: 12, speed: 6.0,  interval: 48 },
-  { level: 9,  name: 'Legend',       price: 14, speed: 7.0,  interval: 48 },
-  { level: 10, name: 'Grand Master', price: 16, speed: 8.0,  interval: 48 },
+  { level: 0,  name: 'Free',         price: 0,  speed: 0.05, interval: 24 },
+  { level: 1,  name: 'Beginner',     price: 0,  speed: 0.1,  interval: 24 },
+  { level: 2,  name: 'Trainee',      price: 1,  speed: 0.5,  interval: 24 },
+  { level: 3,  name: 'Intermediate', price: 2,  speed: 1.0,  interval: 24 },
+  { level: 4,  name: 'Advanced',     price: 4,  speed: 2.0,  interval: 24 },
+  { level: 5,  name: 'Professional', price: 6,  speed: 3.0,  interval: 24 },
+  { level: 6,  name: 'Expert',       price: 8,  speed: 4.0,  interval: 24 },
+  { level: 7,  name: 'Master',       price: 10, speed: 5.0,  interval: 24 },
+  { level: 8,  name: 'Elite',        price: 12, speed: 6.0,  interval: 24 },
+  { level: 9,  name: 'Legend',       price: 14, speed: 7.0,  interval: 24 },
+  { level: 10, name: 'Grand Master', price: 16, speed: 8.0,  interval: 24 },
 ];
 
 function getCommission(level) {
@@ -1601,7 +1601,7 @@ function renderApp() {
   const lvl = LEVELS[user.level - 1];
   document.getElementById('user-id-display').textContent = `ID: ${user.id}`;
   document.getElementById('home-level-badge').textContent = `${getLevelIcon(user.level)} Level ${user.level}`;
-  document.getElementById('home-speed').textContent = `${lvl.speed} TON/48h`;
+  document.getElementById('home-speed').textContent = `${lvl.speed} TON/24h`;
   document.getElementById('balance-display').textContent = user.balance.toFixed(4);
   document.getElementById('total-refs').textContent = user.referrals.length;
   document.getElementById('earned-today').textContent = (lvl.speed / 2).toFixed(4);
