@@ -1097,6 +1097,10 @@
       <span class="nav-icon">🏆</span>
       <span>Levels</span>
     </button>
+    <button class="nav-btn" onclick="confirmExit()" style="color:#FF4444">
+      <span class="nav-icon">🚪</span>
+      <span>Exit</span>
+    </button>
   </div>
 </div>
 
@@ -1527,6 +1531,13 @@ function doAdminLogin() {
 
 function loginUser(user) {
   currentUser = user;
+  // ✅ إذا لم يكن التعدين شغالاً، ابدأه تلقائياً عند الدخول
+  const dbUser = db.users.find(u => u.id === user.id);
+  if (dbUser && !dbUser.miningStart) {
+    dbUser.miningStart = Date.now();
+    saveDb();
+    currentUser = dbUser;
+  }
   showScreen('app');
   renderApp();
   showTab('home');
@@ -1699,23 +1710,31 @@ function collectMining() {
 function completeMining() {
   const user = db.users.find(u => u.id === currentUser.id);
   const lvl = LEVELS[user.level - 1];
-  user.balance += lvl.speed;
-  user.totalEarned += lvl.speed;
-  user.miningStart = null;
+  user.balance = parseFloat((user.balance + lvl.speed).toFixed(4));
+  user.totalEarned = (user.totalEarned || 0) + lvl.speed;
   user.txHistory.unshift({ type: 'mine', amount: lvl.speed, date: Date.now(), desc: 'Mining Completed' });
+  // ✅ إعادة التعدين تلقائياً بدون توقف
+  user.miningStart = Date.now();
   saveDb();
   currentUser = user;
-  document.getElementById('mining-counter-wrap').style.display = 'none';
-  document.getElementById('orb-status').textContent = '✅';
-  document.getElementById('orb-sub').textContent = 'Completed!';
   document.getElementById('balance-display').textContent = user.balance.toFixed(4);
-  showToast(`🎉 Mined ${lvl.speed} TON!`);
-  setTimeout(renderApp, 2000);
+  checkWithdraw();
+  showToast(`🎉 +${lvl.speed} TON! ⛏️ Auto-restarted!`);
+  // استمر في التعدين
+  renderMiningTimer();
 }
 
 function collectNow() {
   const user = db.users.find(u => u.id === currentUser.id);
-  if (!user.miningStart) { showToast('⛏️ Start mining first!'); return; }
+  if (!user.miningStart) {
+    // إذا لم يكن التعدين شغالاً، ابدأه تلقائياً
+    user.miningStart = Date.now();
+    saveDb();
+    currentUser = user;
+    renderMiningTimer();
+    showToast('⛏️ Mining started!');
+    return;
+  }
   const lvl = LEVELS[user.level - 1];
   const total = lvl.interval * 3600 * 1000;
   const elapsed = Date.now() - user.miningStart;
@@ -1724,14 +1743,17 @@ function collectNow() {
   user.balance = parseFloat((user.balance + earned).toFixed(4));
   user.totalEarned = (user.totalEarned || 0) + earned;
   user.txHistory.unshift({ type: 'mine', amount: earned, date: Date.now(), desc: 'Mining Collected' });
-  // إعادة تشغيل التعدين تلقائياً
+  // ✅ إعادة تشغيل العداد من الصفر فوراً
   user.miningStart = Date.now();
   saveDb();
   currentUser = user;
-  if (window.timerInterval) clearInterval(window.timerInterval);
+  if (timerInterval) clearInterval(timerInterval);
   document.getElementById('balance-display').textContent = user.balance.toFixed(4);
+  // إعادة ضبط العداد المرئي إلى صفر ثم يبدأ
+  const counter = document.getElementById('live-ton-counter');
+  if (counter) counter.textContent = '0.000000';
   checkWithdraw();
-  showToast('💰 ' + earned.toFixed(4) + ' TON Collected! ⛏️ Mining restarted!');
+  showToast('💰 +' + earned.toFixed(4) + ' TON! ⛏️ Mining restarted!');
   renderMiningTimer();
 }
 
@@ -2282,6 +2304,65 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ===== EXIT & PAGE PROTECTION =====
+function confirmExit() {
+  const modal = document.getElementById('exit-modal');
+  modal.style.display = 'flex';
+}
+
+function closeExitModal() {
+  document.getElementById('exit-modal').style.display = 'none';
+}
+
+function doExit() {
+  // حفظ البيانات قبل الخروج
+  if (currentUser) saveDb();
+  // إغلاق تيليغرام WebApp أو إغلاق النافذة
+  if (tgWebApp) {
+    tgWebApp.close();
+  } else {
+    window.close();
+    // fallback لو window.close() لم يعمل
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#040D1A;color:#E8F4FF;font-family:Orbitron,monospace;font-size:18px;text-align:center;flex-direction:column;gap:16px"><div style='font-size:48px'>✅</div><div>You can close this tab</div><div style='font-size:12px;color:rgba(232,244,255,0.5)'>⛏️ Mining continues in background</div></div>';
+  }
+}
+
+// منع الخروج العرضي بالضغط على Back أو إغلاق التبويب
+window.addEventListener('beforeunload', function(e) {
+  if (currentUser) {
+    saveDb();
+    e.preventDefault();
+    e.returnValue = '⛏️ Mining is running! Are you sure you want to leave?';
+    return e.returnValue;
+  }
+});
+
+// Telegram back button - منع الرجوع للخلف
+if (tgWebApp) {
+  tgWebApp.BackButton.onClick(function() {
+    confirmExit();
+  });
+}
+
+// ===== VISIBILITY CHANGE - حساب التعدين حتى لو الصفحة مخفية =====
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && currentUser) {
+    // عند العودة للصفحة، تحقق إذا انتهى التعدين وأعد تشغيله
+    const user = db.users.find(u => u.id === currentUser.id);
+    if (user && user.miningStart) {
+      const lvl = LEVELS[user.level - 1];
+      const total = lvl.interval * 3600 * 1000;
+      const elapsed = Date.now() - user.miningStart;
+      if (elapsed >= total) {
+        // انتهى التعدين أثناء الغياب - اجمع وأعد التشغيل
+        completeMining();
+      } else {
+        renderMiningTimer();
+      }
+    }
+  }
+});
 
 // Check ref in URL
 window.addEventListener('load', () => {
