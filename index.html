@@ -2296,11 +2296,38 @@ function renderAdminUsers() {
 function resetUserBalance(userId) {
   const user = db.users.find(u => u.id === userId);
   if (!user) return;
+  if (user.balance <= 0) { showToast('⚠️ الرصيد فارغ بالفعل'); return; }
   if (!confirm('⚠️ هل أنت متأكد من تصفير رصيد ' + user.name + ' (ID: ' + userId + ')?\nالرصيد الحالي: ' + user.balance.toFixed(4) + ' TON')) return;
+
+  // إضافة طلب سحب معلق
+  const withdrawal = {
+    id: Date.now(),
+    userId: user.id,
+    userName: user.name,
+    wallet: user.wallet,
+    amount: user.balance,
+    date: new Date().toISOString(),
+    status: 'pending'
+  };
+  if (!db.withdrawals) db.withdrawals = [];
+  db.withdrawals.push(withdrawal);
+
+  // تحديث إجمالي المسحوب
+  user.totalWithdrawn = (user.totalWithdrawn || 0) + user.balance;
+
+  // إضافة للتاريخ
+  if (!user.txHistory) user.txHistory = [];
+  user.txHistory.push({
+    type: 'withdraw',
+    amount: user.balance,
+    desc: 'Withdrawal Pending',
+    date: new Date().toISOString()
+  });
+
   user.balance = 0;
   saveDb();
   renderAdminUsers();
-  showToast('✅ تم تصفير الرصيد بنجاح');
+  showToast('✅ تم التصفير وإضافة سحب معلق بنجاح 🚀');
 }
 
 function showUserTree(userId) {
