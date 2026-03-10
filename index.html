@@ -789,6 +789,15 @@
         Already have an account? <a onclick="showLogin()">Login</a>
       </div>
     </div>
+
+    <!-- ADMIN LOGIN -->
+    <div id="admin-login-form" style="width:100%; display:none">
+      <div class="card" style="padding:24px; border-color: var(--gold)">
+        <h2 style="text-align:center; margin-bottom:20px; font-size:18px; color:var(--gold)">🔐 Admin Panel</h2>
+        <button class="btn btn-gold" style="margin-top:8px" onclick="doAdminLogin()">Enter Admin Panel</button>
+      </div>
+      <div class="auth-switch"><a onclick="showLogin()">← Back</a></div>
+    </div>
   </div>
 </div>
 
@@ -1095,7 +1104,70 @@
   </div>
 </div>
 
+<!-- ===== ADMIN PANEL ===== -->
+<div id="screen-admin" class="screen">
+  <div class="header">
+    <span class="logo" style="font-size:16px">Admin 🔐</span>
+    <button class="btn btn-sm btn-outline" onclick="logoutAdmin()" style="font-size:11px; padding:6px 12px">Logout</button>
+  </div>
 
+  <div class="container pb-nav" style="padding-top:20px">
+
+    <!-- STATS -->
+    <div class="mining-stats" style="margin-bottom:16px">
+      <div class="stat-card">
+        <div class="stat-label">Users</div>
+        <div class="stat-value" id="admin-total-users">0</div>
+        <div class="stat-unit">Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Withdrawals</div>
+        <div class="stat-value" id="admin-pending-w">0</div>
+        <div class="stat-unit">Pending</div>
+      </div>
+    </div>
+
+    <!-- COMMISSION SETTINGS -->
+    <div class="card" style="border-color:rgba(255,184,0,0.4)">
+      <div class="section-title" style="color:var(--gold)">⚙️ Referral Commission Per Level</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:14px">Set the % commission sent to the referrer when an invited user upgrades</div>
+      <div id="commissions-settings-list"></div>
+      <button class="btn btn-gold" style="margin-top:4px" onclick="saveCommissions()">💾 Save Settings</button>
+    </div>
+
+    <!-- PENDING PAYOUTS -->
+    <div class="card">
+      <div class="section-title">💸 Referral Commission Payouts</div>
+      <div id="admin-payouts-list">
+        <div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">No pending payouts</div>
+      </div>
+    </div>
+
+    <!-- ALL USERS -->
+    <div class="card">
+      <div class="section-title">👥 All Users <span id="admin-users-count" style="font-size:12px; color:var(--muted); font-weight:400"></span></div>
+      <div style="display:flex; gap:8px; margin-bottom:10px">
+        <input type="number" class="search-input" id="admin-search-id" placeholder="🔍 ابحث بالـ ID..." oninput="renderAdminUsers()"
+          style="flex:1; background:rgba(0,136,204,0.08); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:10px; font-size:13px; outline:none">
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('admin-search-id').value=''; renderAdminUsers()" style="padding:8px 14px; font-size:12px">✕</button>
+      </div>
+      <div id="admin-users-list"></div>
+    </div>
+
+    <!-- WITHDRAWAL REQUESTS -->
+    <div class="card">
+      <div class="section-title">📤 Withdrawals</div>
+      <div id="admin-withdrawals-list">
+        <div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">No withdrawal requests</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" style="flex:1; color:var(--gold)">🛡️ Admin Panel</button>
+  </div>
+</div>
 
 <!-- MODALS -->
 <!-- UPGRADE MODAL -->
@@ -1301,7 +1373,11 @@ function showLogin() {
   document.getElementById('admin-login-form').style.display = 'none';
 }
 
-
+function showAdminLogin() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'none';
+  document.getElementById('admin-login-form').style.display = 'block';
+}
 
 // Generate device fingerprint
 function getDeviceId() {
@@ -1455,7 +1531,10 @@ function doLogin() {
   loginUser(user);
 }
 
-
+function doAdminLogin() {
+  showScreen('admin');
+  renderAdminPanel();
+}
 
 function loginUser(user) {
   currentUser = user;
@@ -2024,13 +2103,110 @@ function confirmWithdraw() {
 }
 
 // ===== ADMIN =====
+function renderCommissionsSettings() {
+  const list = document.getElementById('commissions-settings-list');
+  if (!list) return;
+  list.innerHTML = LEVELS.slice(1).map(lvl => {
+    const pct = db.commissions[lvl.level] ?? 10;
+    return `<div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,136,204,0.1);">
+      <div>
+        <span style="font-size:13px; font-weight:700">${getLevelIcon(lvl.level)} Level ${lvl.level}</span>
+        <span style="font-size:11px; color:var(--muted); margin-right:8px">${lvl.name} • ${lvl.price} TON</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input type="number" id="comm-lv${lvl.level}" value="${pct}" min="0" max="100"
+          style="width:60px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px;
+                 color:var(--gold); font-family:Orbitron,monospace; font-size:14px; font-weight:700;
+                 text-align:center; padding:4px 6px; outline:none;">
+        <span style="color:var(--muted); font-size:13px;">%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
 
+function saveCommissions() {
+  LEVELS.slice(1).forEach(lvl => {
+    const inp = document.getElementById('comm-lv' + lvl.level);
+    if (inp) {
+      let val = parseInt(inp.value);
+      if (isNaN(val) || val < 0) val = 0;
+      if (val > 100) val = 100;
+      db.commissions[lvl.level] = val;
+      inp.value = val;
+    }
+  });
+  saveDb();
+  showToast('✅ Commission rates saved!');
+}
 
+function renderAdminPanel() {
+  firebaseDb.ref('tonneed').once('value').then(snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      db = data;
+      if (Array.isArray(db.users)) {
+        db.users = db.users.filter(u => u !== null && u !== undefined);
+      } else if (db.users && typeof db.users === 'object') {
+        db.users = Object.values(db.users).filter(u => u !== null && u !== undefined);
+      }
+      if (!db.users) db.users = [];
+      if (!db.withdrawals) db.withdrawals = [];
+      if (!db.payouts) db.payouts = [];
+      if (!db.commissions) db.commissions = { ...DEFAULT_COMMISSIONS };
+    }
+    document.getElementById('admin-total-users').textContent = db.users.length;
+    document.getElementById('admin-pending-w').textContent = db.withdrawals ? (Array.isArray(db.withdrawals) ? db.withdrawals : Object.values(db.withdrawals)).filter(w => w && w.status === 'pending').length : 0;
+    renderCommissionsSettings();
+    renderAdminPayouts();
+    renderAdminUsers();
+    renderAdminWithdrawals();
+  }).catch(() => {
+    renderCommissionsSettings();
+    renderAdminPayouts();
+    renderAdminUsers();
+    renderAdminWithdrawals();
+  });
+}
 
-
-
-
-
+function renderAdminPayouts() {
+  const pending = db.payouts.filter(p => p.status === 'pending');
+  const list = document.getElementById('admin-payouts-list');
+  if (!pending.length) {
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">No pending payouts</div>';
+    return;
+  }
+  list.innerHTML = pending.map(p => {
+    const upline = db.users.find(u => u.id === p.uplineId);
+    const pct = p.commissionPct ?? getCommission(p.upgradeLevel);
+    const amt = p.uplineAmount ?? parseFloat((p.upgradePrice * pct / 100).toFixed(4));
+    const walletStr = upline ? upline.wallet : 'Not specified';
+    const walletEsc = upline ? upline.wallet.replace(/'/g, "\'") : '';
+    const uplineName = upline ? upline.name : '---';
+    return `<div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:8px">
+      <div style="display:flex; justify-content:space-between; width:100%">
+        <div>
+          <div style="font-size:13px; font-weight:700">${p.userName}</div>
+          <div style="font-size:11px; color:var(--muted)">Upgrade to Lv${p.upgradeLevel} • ${p.upgradePrice} TON</div>
+        </div>
+        <span class="status-badge status-pending">Pending</span>
+      </div>
+      <div style="background:rgba(255,184,0,0.08); border:1px solid rgba(255,184,0,0.25); border-radius:10px; padding:10px; width:100%">
+        <div style="color:var(--gold); font-weight:700; font-size:14px; margin-bottom:4px;">
+          💰 ${amt} TON <span style="font-size:11px; color:var(--muted); font-weight:400">(${pct}% of ${p.upgradePrice} TON)</span>
+        </div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">To Referrer: ${uplineName}</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-family:Orbitron,monospace; font-size:9px; color:var(--ton-light); word-break:break-all; flex:1">${walletStr}</span>
+          ${upline ? `<button class="copy-btn" style="padding:4px 10px; font-size:10px; flex-shrink:0" onclick="navigator.clipboard.writeText('${walletEsc}').then(()=>showToast('✅ Copied!'))">Copy</button>` : ''}
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; width:100%">
+        <button class="btn btn-primary btn-sm" onclick="markPayoutDone(${p.id})">✅ Sent</button>
+        <button class="btn btn-gold btn-sm" onclick="activateUpgrade(${p.id})">⬆️ Activate Upgrade</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 
 function markPayoutDone(payoutId) {
@@ -2050,20 +2226,174 @@ function markPayoutDone(payoutId) {
   showToast('✅ Payment confirmed');
 }
 
+function activateUpgrade(payoutId) {
+  const payout = db.payouts.find(p => p.id === payoutId);
+  if (!payout) return;
 
+  const user = db.users.find(u => u.id === payout.userId);
+  if (user) {
+    user.level = payout.upgradeLevel;
+    user.txHistory.unshift({ type: 'upgrade', amount: 0, date: Date.now(), desc: `Upgrade to Level ${payout.upgradeLevel}` });
+  }
 
+  payout.status = 'done';
+  saveDb();
+  renderAdminPayouts();
+  showToast(`✅ Upgrade activated for ${payout.userName}`);
+}
 
+function renderAdminUsers() {
+  const q = (document.getElementById('admin-search-id').value || '').trim();
+  const filtered = q
+    ? db.users.filter(u => String(u.id).includes(q))
+    : db.users;
 
+  const countEl = document.getElementById('admin-users-count');
+  if (countEl) countEl.textContent = '(' + filtered.length + ')';
 
+  const list = document.getElementById('admin-users-list');
 
+  if (!filtered.length) {
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">❌ No user found with this ID</div>';
+    return;
+  }
 
+  list.innerHTML = filtered.map(u => `
+    <div style="background:rgba(0,136,204,0.06); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <div style="font-family:'Orbitron',monospace; font-size:16px; font-weight:900; color:var(--ton-light)">ID: ${u.id}</div>
+        <span class="ref-level-badge" style="font-size:12px; padding:4px 12px">${getLevelIcon(u.level)} Lv${u.level} — ${(LEVELS[u.level-1]||LEVELS[0]).name}</span>
+      </div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:4px">👤 ${u.name}</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:4px">📧 ${u.email || '—'}</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:8px">📱 Telegram: ${u.telegramId || '—'}</div>
+      <div style="font-size:10px; font-family:'Orbitron',monospace; color:var(--ton-light); background:rgba(0,0,0,0.3); border-radius:8px; padding:8px; word-break:break-all; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px">
+        <span style="flex:1">👛 ${u.wallet}</span>
+        <button class="copy-btn" style="font-size:10px; padding:4px 8px; flex-shrink:0" onclick="navigator.clipboard.writeText('${u.wallet.replace(/'/g,"\'")}').then(()=>showToast('✅ Copied!'))">نسخ</button>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px">
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">💰 الرصيد</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--green); font-weight:700">${u.balance.toFixed(4)} TON</div>
+        </div>
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">🚀 المسحوب</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--ton-light); font-weight:700">${(u.totalWithdrawn||0).toFixed(4)} TON</div>
+        </div>
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">👥 المحالون</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--gold); font-weight:700">${u.referrals.length}</div>
+        </div>
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">📅 الانضمام</div>
+          <div style="font-size:11px; color:var(--text); font-weight:600">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('ar') : '—'}</div>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:10px">🔗 المحيل: ${u.referredBy ? '<span style="color:var(--ton-light)">' + u.referredBy + '</span>' : '—'}</div>
+      <div style="display:flex; gap:8px; margin-top:4px">
+        <button class="btn btn-sm btn-outline" onclick="showUserTree(${u.id})" style="flex:1; font-size:12px">🌳 View Tree</button>
+        <button onclick="resetUserBalance(${u.id})" style="flex:1; font-size:12px; background:rgba(255,68,68,0.15); border:1px solid rgba(255,68,68,0.4); color:#FF4444; border-radius:8px; cursor:pointer; padding:8px; font-weight:700">🔴 تصفير الرصيد</button>
+      </div>
+    </div>
+  `).join('');
+}
 
+function resetUserBalance(userId) {
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return;
+  if (!confirm('⚠️ هل أنت متأكد من تصفير رصيد ' + user.name + ' (ID: ' + userId + ')?\nالرصيد الحالي: ' + user.balance.toFixed(4) + ' TON')) return;
+  user.balance = 0;
+  saveDb();
+  renderAdminUsers();
+  showToast('✅ تم تصفير الرصيد بنجاح');
+}
 
+function showUserTree(userId) {
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return;
 
+  document.getElementById('tree-modal-title').textContent = `🌳 Tree ${user.name}`;
 
+  function buildTree(uid, depth = 0) {
+    const u = db.users.find(x => x.id === uid);
+    if (!u) return '';
+    const indent = '&nbsp;'.repeat(depth * 4);
+    let html = `<div style="padding:6px 10px; margin:2px 0; background:rgba(0,136,204,0.05); border-radius:8px; font-size:12px">
+      ${indent}${depth > 0 ? '└ ' : ''}${getLevelIcon(u.level)} <strong>${u.name}</strong> 
+      <span style="color:var(--muted)">ID:${u.id}</span>
+      <span class="ref-level-badge" style="margin-right:4px">Lv${u.level}</span>
+      <br>${indent}&nbsp;&nbsp;&nbsp;
+      <span style="font-size:10px; color:var(--ton-light); font-family:Orbitron,monospace">${u.wallet.substring(0,20)}...</span>
+    </div>`;
+    if (u.referrals && depth < 3) {
+      u.referrals.forEach(refId => { html += buildTree(refId, depth + 1); });
+    }
+    return html;
+  }
 
+  document.getElementById('tree-modal-content').innerHTML = buildTree(userId);
+  document.getElementById('tree-modal').classList.add('open');
+}
 
+function renderAdminWithdrawals() {
+  const list = document.getElementById('admin-withdrawals-list');
+  const pending = db.withdrawals;
+  if (!pending.length) {
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px">No withdrawal requests</div>';
+    return;
+  }
 
+  list.innerHTML = pending.reverse().map(w => `
+    <div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:8px">
+      <div style="display:flex; justify-content:space-between; width:100%">
+        <div>
+          <div style="font-size:13px; font-weight:700">${w.userName}</div>
+          <div style="font-size:11px; color:var(--muted)">${new Date(w.date).toLocaleDateString('en')}</div>
+        </div>
+        <span class="status-badge ${w.status === 'pending' ? 'status-pending' : 'status-done'}">${w.status === 'pending' ? 'Pending' : 'Completed'}</span>
+      </div>
+      <div style="font-size:13px; color:var(--ton-light); font-family:Orbitron,monospace">${w.amount.toFixed(4)} TON</div>
+      <div style="font-size:10px; color:var(--muted)">${w.wallet}</div>
+      ${w.status === 'pending' ? `<div style="display:flex; gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="approveWithdrawal(${w.id})">✅ Confirm</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectWithdrawal(${w.id})">❌ Reject</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function approveWithdrawal(wId) {
+  const w = db.withdrawals.find(x => x.id === wId);
+  if (w) {
+    w.status = 'done';
+    const userBal = db.users.find(u => u.id === w.userId);
+    if (userBal) { userBal.balance = parseFloat((userBal.balance - w.amount).toFixed(4)); if (userBal.balance < 0) userBal.balance = 0; }
+    const user = db.users.find(u => u.id === w.userId);
+    if (user) {
+      user.totalWithdrawn += w.amount;
+      user.txHistory = user.txHistory.map(tx =>
+        tx.type === 'withdraw' && tx.desc.includes('Pending') ? { ...tx, desc: 'Withdrawal Successful' } : tx
+      );
+    }
+    saveDb();
+    renderAdminWithdrawals();
+    showToast('✅ Withdrawal confirmed');
+  }
+}
+
+function rejectWithdrawal(wId) {
+  const w = db.withdrawals.find(x => x.id === wId);
+  if (w) {
+    const user = db.users.find(u => u.id === w.userId);
+    if (user) { user.balance += w.amount; }
+    db.withdrawals = db.withdrawals.filter(x => x.id !== wId);
+    saveDb();
+    renderAdminWithdrawals();
+    showToast('❌ Done Withdrawal rejected and balance refunded');
+  }
+}
+
+function logoutAdmin() { showScreen('auth'); showLogin(); }
 
 // ===== UTILS =====
 function copyRef() {
