@@ -1218,7 +1218,7 @@ const firebaseDb = firebase.database();
 
 function saveDb() {
   firebaseDb.ref('tonneed').set(db);
-  localStorage.setItem('tonneed_db', JSON.stringify(db));
+  localStorage.setItem('tonneed_db_admin', JSON.stringify(db));
 }
 
 function loadDb(callback) {
@@ -1226,12 +1226,19 @@ function loadDb(callback) {
     const data = snapshot.val();
     if (data) {
       db = data;
-      // Ensure commissions exist
+      // Convert users array if needed
+      if (Array.isArray(db.users)) {
+        db.users = db.users.filter(u => u !== null && u !== undefined);
+      } else if (db.users && typeof db.users === 'object') {
+        db.users = Object.values(db.users).filter(u => u !== null && u !== undefined);
+      }
+      if (!db.users) db.users = [];
+      if (!db.withdrawals) db.withdrawals = [];
+      if (!db.payouts) db.payouts = [];
       if (!db.commissions) db.commissions = { ...DEFAULT_COMMISSIONS };
     }
     callback();
   }).catch(() => {
-    // fallback to localStorage
     callback();
   });
 }
@@ -1280,7 +1287,7 @@ const DEFAULT_COMMISSIONS = {
   2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 10, 9: 10, 10: 10
 };
 
-let db = JSON.parse(localStorage.getItem('tonneed_db') || JSON.stringify({
+let db = JSON.parse(localStorage.getItem('tonneed_db_admin') || JSON.stringify({
   users: [{
     id: 555497,
     name: 'Admin Root',
@@ -1567,6 +1574,47 @@ function loginUser(user) {
   showScreen('app');
   renderApp();
   showTab('home');
+  checkUserNotifications(user.id);
+}
+
+function checkUserNotifications(userId) {
+  firebaseDb.ref('tonneed/users').once('value').then(snap => {
+    const users = snap.val();
+    let uKey = null;
+    if (Array.isArray(users)) {
+      uKey = users.findIndex(u => u && u.id === userId);
+    } else {
+      Object.keys(users).forEach(k => { if (users[k] && users[k].id === userId) uKey = k; });
+    }
+    if (uKey === null) return;
+    const u = Array.isArray(users) ? users[uKey] : users[uKey];
+    if (!u || !u.notifications) return;
+    const notifs = Array.isArray(u.notifications) ? u.notifications.filter(n=>n!=null) : Object.values(u.notifications).filter(n=>n!=null);
+    const unread = notifs.filter(n => !n.read);
+    if (!unread.length) return;
+    // عرض الإشعار
+    const n = unread[0];
+    setTimeout(() => {
+      showNotificationModal(n.title, n.message);
+      // تحديد كل الإشعارات كمقروءة
+      notifs.forEach(n => n.read = true);
+      firebaseDb.ref('tonneed/users/' + uKey + '/notifications').set(notifs);
+    }, 1500);
+  });
+}
+
+function showNotificationModal(title, message) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#071628;border:2px solid #00E676;border-radius:20px;padding:30px;max-width:340px;width:100%;text-align:center;">
+      <div style="font-size:48px;margin-bottom:16px">✅</div>
+      <div style="font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:#00E676;margin-bottom:12px">${title}</div>
+      <div style="font-size:14px;color:rgba(232,244,255,0.8);margin-bottom:24px;line-height:1.6">${message}</div>
+      <button onclick="this.closest('div[style]').remove()" style="background:#00E676;border:none;color:#000;border-radius:10px;padding:12px 32px;font-size:15px;font-weight:bold;cursor:pointer;width:100%">حسناً ✓</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
 }
 
 // ===== SCREENS =====
@@ -2092,12 +2140,32 @@ function saveCommissions() {
 }
 
 function renderAdminPanel() {
-  document.getElementById('admin-total-users').textContent = db.users.length;
-  document.getElementById('admin-pending-w').textContent = db.withdrawals.filter(w => w.status === 'pending').length;
-  renderCommissionsSettings();
-  renderAdminPayouts();
-  renderAdminUsers();
-  renderAdminWithdrawals();
+  firebaseDb.ref('tonneed').once('value').then(snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      db = data;
+      if (Array.isArray(db.users)) {
+        db.users = db.users.filter(u => u !== null && u !== undefined);
+      } else if (db.users && typeof db.users === 'object') {
+        db.users = Object.values(db.users).filter(u => u !== null && u !== undefined);
+      }
+      if (!db.users) db.users = [];
+      if (!db.withdrawals) db.withdrawals = [];
+      if (!db.payouts) db.payouts = [];
+      if (!db.commissions) db.commissions = { ...DEFAULT_COMMISSIONS };
+    }
+    document.getElementById('admin-total-users').textContent = db.users.length;
+    document.getElementById('admin-pending-w').textContent = db.withdrawals ? (Array.isArray(db.withdrawals) ? db.withdrawals : Object.values(db.withdrawals)).filter(w => w && w.status === 'pending').length : 0;
+    renderCommissionsSettings();
+    renderAdminPayouts();
+    renderAdminUsers();
+    renderAdminWithdrawals();
+  }).catch(() => {
+    renderCommissionsSettings();
+    renderAdminPayouts();
+    renderAdminUsers();
+    renderAdminWithdrawals();
+  });
 }
 
 function renderAdminPayouts() {
@@ -2196,28 +2264,48 @@ function renderAdminUsers() {
         <div style="font-family:'Orbitron',monospace; font-size:16px; font-weight:900; color:var(--ton-light)">ID: ${u.id}</div>
         <span class="ref-level-badge" style="font-size:12px; padding:4px 12px">${getLevelIcon(u.level)} Lv${u.level} — ${(LEVELS[u.level-1]||LEVELS[0]).name}</span>
       </div>
-      <div style="font-size:14px; font-weight:700; margin-bottom:6px">👤 ${u.name}</div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:4px">👤 ${u.name}</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:4px">📧 ${u.email || '—'}</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:8px">📱 Telegram: ${u.telegramId || '—'}</div>
       <div style="font-size:10px; font-family:'Orbitron',monospace; color:var(--ton-light); background:rgba(0,0,0,0.3); border-radius:8px; padding:8px; word-break:break-all; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px">
         <span style="flex:1">👛 ${u.wallet}</span>
-        <button class="copy-btn" style="font-size:10px; padding:4px 8px; flex-shrink:0" onclick="navigator.clipboard.writeText('${u.wallet.replace(/'/g,"\'")}').then(()=>showToast('✅ Copied!'))">Copy</button>
+        <button class="copy-btn" style="font-size:10px; padding:4px 8px; flex-shrink:0" onclick="navigator.clipboard.writeText('${u.wallet.replace(/'/g,"\'")}').then(()=>showToast('✅ Copied!'))">نسخ</button>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px">
         <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
-          <div style="font-size:10px; color:var(--muted)">Balance</div>
-          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--green); font-weight:700">${u.balance.toFixed(4)}</div>
+          <div style="font-size:10px; color:var(--muted)">💰 الرصيد</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--green); font-weight:700">${u.balance.toFixed(4)} TON</div>
         </div>
         <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
-          <div style="font-size:10px; color:var(--muted)">Referrals</div>
+          <div style="font-size:10px; color:var(--muted)">🚀 المسحوب</div>
+          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--ton-light); font-weight:700">${(u.totalWithdrawn||0).toFixed(4)} TON</div>
+        </div>
+        <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
+          <div style="font-size:10px; color:var(--muted)">👥 المحالون</div>
           <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--gold); font-weight:700">${u.referrals.length}</div>
         </div>
         <div style="text-align:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:8px">
-          <div style="font-size:10px; color:var(--muted)">Withdrawn</div>
-          <div style="font-family:'Orbitron',monospace; font-size:13px; color:var(--ton-light); font-weight:700">${(u.totalWithdrawn||0).toFixed(4)}</div>
+          <div style="font-size:10px; color:var(--muted)">📅 الانضمام</div>
+          <div style="font-size:11px; color:var(--text); font-weight:600">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('ar') : '—'}</div>
         </div>
       </div>
-      <button class="btn btn-sm btn-outline" onclick="showUserTree(${u.id})" style="width:100%; font-size:12px">🌳 View Tree</button>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:10px">🔗 المحيل: ${u.referredBy ? '<span style="color:var(--ton-light)">' + u.referredBy + '</span>' : '—'}</div>
+      <div style="display:flex; gap:8px; margin-top:4px">
+        <button class="btn btn-sm btn-outline" onclick="showUserTree(${u.id})" style="flex:1; font-size:12px">🌳 View Tree</button>
+        <button onclick="resetUserBalance(${u.id})" style="flex:1; font-size:12px; background:rgba(255,68,68,0.15); border:1px solid rgba(255,68,68,0.4); color:#FF4444; border-radius:8px; cursor:pointer; padding:8px; font-weight:700">🔴 تصفير الرصيد</button>
+      </div>
     </div>
   `).join('');
+}
+
+function resetUserBalance(userId) {
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return;
+  if (!confirm('⚠️ هل أنت متأكد من تصفير رصيد ' + user.name + ' (ID: ' + userId + ')?\nالرصيد الحالي: ' + user.balance.toFixed(4) + ' TON')) return;
+  user.balance = 0;
+  saveDb();
+  renderAdminUsers();
+  showToast('✅ تم تصفير الرصيد بنجاح');
 }
 
 function showUserTree(userId) {
@@ -2402,22 +2490,9 @@ window.addEventListener('load', () => {
     }, { passive: false });
   }
 
-  // مسح البيانات القديمة من localStorage
-  localStorage.removeItem('tonneed_db');
   loadDb(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const ref = urlParams.get('ref');
-    const admin = urlParams.get('admin');
-    if (admin === 'true') {
-      showScreen('admin');
-      renderAdminPanel();
-      return;
-    }
-    if (ref) {
-      showRegister();
-      document.getElementById('reg-ref').value = ref;
-      showToast('🔗 Redirected via referral link');
-    }
+    showScreen('admin');
+    renderAdminPanel();
   });
 });
 </script>
