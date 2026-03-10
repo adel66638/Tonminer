@@ -1779,17 +1779,21 @@ function collectMining() {
 function completeMining() {
   const user = db.users.find(u => u.id === currentUser.id);
   const lvl = LEVELS[user.level - 1];
-  user.balance = parseFloat((user.balance + lvl.speed).toFixed(4));
-  user.totalEarned = (user.totalEarned || 0) + lvl.speed;
-  user.txHistory.unshift({ type: 'mine', amount: lvl.speed, date: Date.now(), desc: 'Mining Completed' });
-  // ✅ إعادة التعدين تلقائياً بدون توقف
+  const total = lvl.interval * 3600 * 1000;
+  const elapsed = Date.now() - (user.miningStart || Date.now());
+  // حساب كل الدورات المنتهية (في حالة الغياب الطويل)
+  const cycles = Math.max(1, Math.floor(elapsed / total));
+  const earned = cycles * lvl.speed;
+  user.balance = parseFloat((user.balance + earned).toFixed(4));
+  user.totalEarned = (user.totalEarned || 0) + earned;
+  user.txHistory.unshift({ type: 'mine', amount: earned, date: Date.now(), desc: 'Mining x' + cycles + ' cycle(s)' });
+  // ابدأ دورة جديدة مباشرة
   user.miningStart = Date.now();
   saveDb();
   currentUser = user;
   document.getElementById('balance-display').textContent = user.balance.toFixed(4);
   checkWithdraw();
-  showToast(`🎉 +${lvl.speed} TON! ⛏️ Auto-restarted!`);
-  // استمر في التعدين
+  showToast('🎉 +' + earned.toFixed(4) + ' TON! ⛏️ Mining continues!');
   renderMiningTimer();
 }
 
@@ -2484,18 +2488,36 @@ if (tgWebApp) {
 // ===== VISIBILITY CHANGE - حساب التعدين حتى لو الصفحة مخفية =====
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'visible' && currentUser) {
-    // عند العودة للصفحة، تحقق إذا انتهى التعدين وأعد تشغيله
     const user = db.users.find(u => u.id === currentUser.id);
     if (user && user.miningStart) {
       const lvl = LEVELS[user.level - 1];
       const total = lvl.interval * 3600 * 1000;
       const elapsed = Date.now() - user.miningStart;
+
       if (elapsed >= total) {
-        // انتهى التعدين أثناء الغياب - اجمع وأعد التشغيل
-        completeMining();
-      } else {
-        renderMiningTimer();
+        // حساب كم دورة انتهت أثناء الغياب
+        const cyclesCompleted = Math.floor(elapsed / total);
+        const earned = cyclesCompleted * lvl.speed;
+        user.balance = parseFloat((user.balance + earned).toFixed(4));
+        user.totalEarned = (user.totalEarned || 0) + earned;
+        user.txHistory.unshift({
+          type: 'mine', amount: earned, date: Date.now(),
+          desc: 'Mining x' + cyclesCompleted + ' cycles (offline)'
+        });
+        // ابدأ دورة جديدة من وقت انتهاء آخر دورة
+        user.miningStart = user.miningStart + (cyclesCompleted * total);
+        saveDb();
+        currentUser = user;
+        document.getElementById('balance-display').textContent = user.balance.toFixed(4);
+        showToast('🎉 Offline mining: +' + earned.toFixed(4) + ' TON!');
       }
+      renderMiningTimer();
+    } else if (user && !user.miningStart) {
+      // إذا لم يكن التعدين شغالاً، ابدأه تلقائياً
+      user.miningStart = Date.now();
+      saveDb();
+      currentUser = user;
+      renderMiningTimer();
     }
   }
 });
