@@ -1531,11 +1531,6 @@ function doLogin() {
   loginUser(user);
 }
 
-function doAdminLogin() {
-  showScreen('admin');
-  renderAdminPanel();
-}
-
 function loginUser(user) {
   currentUser = user;
   const dbUser = db.users.find(u => u.id === user.id);
@@ -2491,8 +2486,13 @@ window.addEventListener('load', () => {
   }
 
   loadDb(() => {
-    showScreen('admin');
-    renderAdminPanel();
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      showRegister();
+      document.getElementById('reg-ref').value = ref;
+      showToast('🔗 Redirected via referral link');
+    }
   });
 });
 </script>
